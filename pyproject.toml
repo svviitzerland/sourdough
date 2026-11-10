@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sourdough"
+version = "0.1.0"
+description = "A starter for a baby AI that is born knowing nothing and grows by interacting with you"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Farhan Aulianda" }]
+dependencies = ["numpy>=1.26", "pillow>=10"]
+keywords = ["developmental-ai", "online-learning", "continual-learning", "hebbian", "embodied-ai"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+sourdough = "sourdough.__main__:main"
+
+[tool.setuptools]
+packages = { find = { include = ["sourdough*"] } }
+
+[tool.setuptools.package-data]
+"sourdough.interface" = ["static/**/*"]
+"sourdough.foundation" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
