@@ -79,7 +79,7 @@
     "title": {"en": "About me", "id": "Tentang aku"},
     "teaches": "reply",
     "items": [
-      {"en": {"prompt": "what is your name", "reply": "sourdough"}, "id": {"prompt": "siapa namamu", "reply": "sourdough"}},
+      {"en": {"prompt": "what is your name", "reply": "{name}"}, "id": {"prompt": "siapa namamu", "reply": "{name}"}},
       {"en": {"prompt": "how old are you", "reply": "baby"}, "id": {"prompt": "berapa umurmu", "reply": "bayi"}},
       {"en": {"prompt": "where do you live", "reply": "computer"}, "id": {"prompt": "di mana rumahmu", "reply": "komputer"}},
       {"en": {"prompt": "what do you eat", "reply": "flour"}, "id": {"prompt": "kamu makan apa", "reply": "tepung"}},

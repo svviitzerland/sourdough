@@ -105,13 +105,14 @@ def _outline(shape: str, cx: float, cy: float, r: float, tilt: float) -> list[tu
 
 
 def teach(brain, name: str, language: str = "en", rounds: int = 2,
-          seed: int | None = None) -> dict:
+          seed: int | None = None, who: str = "sourdough") -> dict:
     """Run a lesson: a few rounds of teaching, then a quiz with feedback.
 
+    ``who`` is the baby's own name, used wherever a lesson says ``{name}``.
     Returns the quiz results so an interface can show how it went.
     """
     book = curriculum()
-    lesson = book[name]
+    lesson = _personal(book[name], who)
     rng = np.random.default_rng(seed)
     feedback = book["_feedback"][language]
 
@@ -133,7 +134,7 @@ def levels() -> list[dict]:
     return [{"name": name, **level} for name, level in curriculum()["_levels"].items()]
 
 
-def grow(brain, level: str, seed: int = 0) -> list[dict]:
+def grow(brain, level: str, seed: int = 0, who: str = "sourdough") -> list[dict]:
     """Take a baby through every lesson of a level, in every language.
 
     The result is still a baby that learned only from experience, the same
@@ -144,12 +145,18 @@ def grow(brain, level: str, seed: int = 0) -> list[dict]:
     reports = []
     for language in LANGUAGES:
         for name in lessons:
-            report = teach(brain, name, language, rounds=2, seed=seed)
+            report = teach(brain, name, language, rounds=2, seed=seed, who=who)
             reports.append({"language": language, "lesson": report["lesson"],
                             "score": report["score"], "total": report["total"]})
         if lessons:
             brain.sleep()
     return reports
+
+
+def _personal(lesson: dict, who: str) -> dict:
+    """A copy of the lesson where ``{name}`` is the baby's own name."""
+    text = json.dumps(lesson).replace("{name}", who.lower())
+    return json.loads(text)
 
 
 def _show(brain, lesson: dict, item: dict, language: str, rng: np.random.Generator) -> None:
