@@ -186,6 +186,7 @@ Every muscle moves on a critically damped spring, so one expression flows into t
 Two things about its face are learned, the way they are in infants.
 
 * **Control.** A newborn's expressions are small, imprecise and twitchy, with big eyes and faint brows. `face()["maturity"]` grows with age and vocabulary, and with it the range and steadiness of every expression (Oster, 2005).
+* **Blinking.** A newborn blinks only a few times a minute, and blinking grows more frequent through childhood (Zametkin, Stevens and Pittman, 1979). Its blinks follow the same curve, and each one closes fast and opens more slowly, as a real eyelid does.
 * **The social smile.** Its smile starts weak. Each time it is praised while happy, `smile` grows a little, so a baby that people answer warmly smiles more broadly. Infants' smiles likewise turn social and grow when caregivers respond to them (Messinger and Fogel, 2007).
 
 ## What it cannot do yet
@@ -220,3 +221,4 @@ Each of these is a good first contribution. See [growing-it.md](growing-it.md).
 * Turing, A. M. (1950). Computing machinery and intelligence. *Mind*, 59(236), 433 to 460.
 * Wilson, M. A., and McNaughton, B. L. (1994). Reactivation of hippocampal ensemble memories during sleep. *Science*, 265(5172), 676 to 679.
 * Yu, C., and Smith, L. B. (2007). Rapid word learning under uncertainty via cross-situational statistics. *Psychological Science*, 18(5), 414 to 420.
+* Zametkin, A. J., Stevens, J. R., and Pittman, R. (1979). Ontogeny of spontaneous blinking and of habituation of the blink reflex. *Annals of Neurology*, 5(5), 453 to 457.

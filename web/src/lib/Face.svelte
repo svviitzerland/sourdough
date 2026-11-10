@@ -37,7 +37,6 @@
   }
 
   const springs = Object.fromEntries(MUSCLES.map((m) => [m, spring()]))
-  const blinkSpring = spring()
   let f = $state(Object.fromEntries(MUSCLES.map((m) => [m, 0])))
   let blink = $state(0)
   let breath = $state(0)
@@ -48,8 +47,29 @@
   const maturity = $derived(baby.state?.face?.maturity ?? 0.2)
   const asleep = $derived((baby.state?.feelings?.tiredness ?? 0) > 0.95 || (baby.moment?.kind == "sleep" && time - baby.moment.at < 6000))
 
-  let nextBlink = 0
-  let blinkUntil = 0
+  // Newborns blink rarely, only a few times a minute, and the rate climbs
+  // through childhood (Zametkin, Stevens and Pittman, 1979). A blink closes
+  // fast, rests a moment, and opens more slowly, about a third of a second.
+  let nextBlink = performance.now() + 3000
+  let blinkAt = -1e9
+  const CLOSE = 0.09
+  const HOLD = 0.05
+  const OPEN = 0.2
+
+  function blinkShape(since) {
+    if (since < 0 || since > CLOSE + HOLD + OPEN) return 0
+    if (since < CLOSE) return Math.sin((since / CLOSE) * Math.PI / 2)
+    if (since < CLOSE + HOLD) return 1
+    const u = (since - CLOSE - HOLD) / OPEN
+    return 1 - u * u * (3 - 2 * u)
+  }
+
+  function scheduleBlink(now) {
+    const every = 3.5 + 9 * (1 - maturity)            // seconds: about 12 for a newborn, 4 when grown
+    nextBlink = now + (every * (0.6 + Math.random() * 0.8)) * 1000
+    // Sometimes a second blink follows right after, as people do.
+    if (maturity > 0.4 && Math.random() < 0.12) nextBlink = now + 450
+  }
   let glance = { x: 0, y: 0, until: 0 }
 
   function targets(now) {
@@ -119,15 +139,14 @@
       for (const m of MUSCLES) step(springs[m], t[m], dt, RESPONSE[m] || 0.35)
 
       if (now > nextBlink && !asleep) {
-        blinkUntil = now + 130
-        nextBlink = now + 2200 + Math.random() * 4200
+        blinkAt = now
+        scheduleBlink(now)
       }
-      step(blinkSpring, now < blinkUntil ? 1 : 0, dt, 0.06)
 
       const next = {}
       for (const m of MUSCLES) next[m] = springs[m].value
       f = next
-      blink = blinkSpring.value
+      blink = blinkShape((now - blinkAt) / 1000)
       breath = Math.sin(now / 1000 * 1.6)
       time = now
       frame = requestAnimationFrame(loop)
