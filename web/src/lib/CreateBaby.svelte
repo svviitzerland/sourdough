@@ -1,14 +1,13 @@
 <script>
-  import { Baby, Blocks, Backpack, GraduationCap, LoaderCircle, X, Check } from "@lucide/svelte"
+  import { Baby, Blocks, Backpack, GraduationCap, LoaderCircle, Check } from "@lucide/svelte"
   import { baby, createBaby } from "./baby.svelte.js"
   import { COLORS } from "./colors.js"
-  import Logo from "./Logo.svelte"
   import Avatar from "./Avatar.svelte"
 
-  // first: the welcome screen when no baby exists yet. Otherwise a dialog.
+  // first: the welcome screen when no baby exists yet. Otherwise a sheet.
   let { first = false, onclose = () => {} } = $props()
 
-  const packs = { toddler: Blocks, preschooler: Backpack, kid: GraduationCap }
+  const packs = { newborn: Baby, toddler: Blocks, preschooler: Backpack, kid: GraduationCap }
   let name = $state("")
   let about = $state("")
   let color = $state("peach")
@@ -33,84 +32,65 @@
       saving = false
     }
   }
+
+  const field = "h-11 w-full rounded-[10px] bg-fill px-3.5 text-[15px] placeholder:text-faint focus:outline-none focus:ring-2 focus:ring-blue/40"
 </script>
 
 <div role="dialog" aria-modal="true" aria-label="Create a baby"
-  class="animate-fade fixed inset-0 z-20 grid place-items-center overflow-y-auto bg-night-900/90 p-4 backdrop-blur-lg sm:p-6">
-  <form onsubmit={submit} class="relative grid w-full max-w-xl gap-6 rounded-3xl border border-white/[0.06] bg-night-850 p-6 sm:p-8">
-    {#if !first}
-      <button type="button" onclick={onclose} title="Close"
-        class="absolute right-4 top-4 grid size-9 place-items-center rounded-full text-mist hover:bg-night-700 hover:text-ink">
-        <X class="size-5" />
-      </button>
-    {/if}
-
+  class="fixed inset-0 z-40 grid place-items-center overflow-y-auto p-4 sm:p-6 {first ? 'bg-bg' : 'bg-black/30'}">
+  {#if !first}<button class="absolute inset-0 cursor-default" onclick={onclose} aria-label="Close"></button>{/if}
+  <form onsubmit={submit} class="animate-appear relative grid w-full max-w-lg gap-5 rounded-[28px] bg-surface p-6 shadow-card sm:p-8">
     <div class="grid justify-items-center gap-2 text-center">
-      {#if first}<Logo size={52} />{:else}<Avatar profile={{ name: name || "?", color }} size="size-14" text="text-xl" />{/if}
-      <h2 class="mt-1 text-2xl font-bold tracking-tight">{first ? "Meet your first Sourdough" : "A new baby"}</h2>
-      <p class="max-w-md text-sm text-mist">
-        Every Sourdough is born knowing nothing and learns only from you. Give it a name, and it will grow into its own character.
-      </p>
+      <Avatar profile={{ color }} size={72} />
+      <h2 class="title mt-1 text-[28px]">{first ? "Meet your first Sourdough" : "New baby"}</h2>
+      <p class="max-w-sm text-[15px] text-mute">Every Sourdough is born knowing nothing and learns only from you.</p>
     </div>
 
-    <label class="grid gap-1.5">
-      <span class="text-sm font-semibold">Name</span>
-      <input bind:value={name} maxlength="40" placeholder="Kiki" autocomplete="off" required
-        class="h-12 rounded-2xl border border-white/[0.07] bg-night-800 px-4 text-[15px] placeholder:text-fog focus:border-peach/50 focus:outline-none" />
-      {#if name && !valid}
-        <span class="text-xs text-rose">Use letters, numbers, dots, dashes or underscores, without spaces.</span>
-      {:else if taken}
-        <span class="text-xs text-rose">There is already a baby called {name}.</span>
-      {/if}
-    </label>
+    <div class="grid gap-2.5">
+      <input bind:value={name} maxlength="40" placeholder="Name" aria-label="Name" autocomplete="off" required class={field} />
+      {#if name && !valid}<span class="px-1 text-[12px] text-red">Letters, numbers, dots, dashes or underscores, no spaces.</span>
+      {:else if taken}<span class="px-1 text-[12px] text-red">There is already a baby called {name}.</span>{/if}
+      <input bind:value={about} maxlength="200" placeholder="Who is it? (optional)" aria-label="Who is it" class={field} />
+    </div>
 
-    <label class="grid gap-1.5">
-      <span class="text-sm font-semibold">Who is it? <span class="font-normal text-fog">Optional</span></span>
-      <input bind:value={about} maxlength="200" placeholder="A curious little robot who lives on my desk"
-        class="h-12 rounded-2xl border border-white/[0.07] bg-night-800 px-4 text-[15px] placeholder:text-fog focus:border-peach/50 focus:outline-none" />
-    </label>
-
-    <div class="grid gap-2">
-      <span class="text-sm font-semibold">Color</span>
-      <div class="flex gap-3">
+    <div class="flex items-center justify-between px-1">
+      <span class="text-[15px]">Color</span>
+      <div class="flex gap-2.5">
         {#each Object.entries(COLORS) as [key, c]}
-          <button type="button" onclick={() => (color = key)} title={key} aria-pressed={color == key}
-            class="grid size-9 place-items-center rounded-full bg-gradient-to-br {c.avatar} ring-offset-2 ring-offset-night-850 transition {color == key ? 'ring-2 ring-ink' : 'opacity-70 hover:opacity-100'}">
-            {#if color == key}<Check class="size-4 text-night-900" strokeWidth={3} />{/if}
+          <button type="button" onclick={() => (color = key)} title={c.name} aria-pressed={color == key}
+            class="grid size-7 place-items-center rounded-full {c.bg} ring-offset-2 ring-offset-surface transition {color == key ? 'ring-2 ring-ink/50' : ''}">
+            {#if color == key}<Check class="size-3.5 text-white" strokeWidth={3.5} />{/if}
           </button>
         {/each}
       </div>
     </div>
 
     <div class="grid gap-2">
-      <span class="text-sm font-semibold">How it starts</span>
-      <button type="button" onclick={() => (level = "newborn")}
-        class="flex items-center gap-3 rounded-2xl border p-4 text-left transition {level == 'newborn' ? 'border-peach/60 bg-peach/[0.07]' : 'border-white/[0.07] bg-night-800 hover:bg-night-700'}">
-        <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-peach/15 text-peach"><Baby class="size-5" /></span>
-        <span class="flex-1">
-          <b class="block font-semibold">Newborn <span class="ml-1 rounded-full bg-peach/15 px-2 py-0.5 text-xs font-medium text-peach">recommended</span></b>
-          <span class="text-sm text-mist">Knows nothing. Every word it ever learns comes from you.</span>
-        </span>
-      </button>
-      <p class="mt-2 text-xs text-fog">Or give it a starter pack. It runs the built-in lessons once, right now, then it is yours to raise.</p>
-      <div class="grid grid-cols-3 gap-2">
-        {#each baby.levels.filter((l) => l.name != "newborn") as l}
+      <span class="px-1 text-[13px] text-mute">How it starts</span>
+      <div class="divide-y divide-line overflow-hidden rounded-xl bg-fill">
+        {#each baby.levels as l}
           {@const Icon = packs[l.name] || Blocks}
-          <button type="button" onclick={() => (level = l.name)} title={l.about}
-            class="grid gap-1 rounded-2xl border p-3 text-left transition {level == l.name ? 'border-peach/60 bg-peach/[0.07]' : 'border-white/[0.07] bg-night-800 hover:bg-night-700'}">
-            <Icon class="size-[18px] text-mist" />
-            <b class="text-sm font-semibold">{l.title}</b>
-            <span class="text-xs leading-snug text-fog">{l.about}</span>
+          <button type="button" onclick={() => (level = l.name)} class="flex w-full items-center gap-3 px-3.5 py-3 text-left">
+            <span class="grid size-8 shrink-0 place-items-center rounded-[9px] text-white {l.name == 'newborn' ? 'bg-accent' : 'bg-blue'}"><Icon class="size-4" /></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-[15px] font-medium">{l.name == "newborn" ? "Newborn" : `${l.title} starter pack`}</span>
+              <span class="block text-[13px] leading-snug text-mute">{l.name == "newborn" ? "Knows nothing. Every word comes from you." : l.about}</span>
+            </span>
+            {#if level == l.name}<Check class="size-5 shrink-0 text-blue" strokeWidth={3} />{/if}
           </button>
         {/each}
       </div>
+      <p class="px-1 text-[12px] text-faint">A starter pack runs its lessons once, now. After that, it only learns from you.</p>
     </div>
 
-    {#if error}<p class="text-sm text-rose">{error}</p>{/if}
+    {#if error}<p class="text-[13px] text-red">{error}</p>{/if}
 
-    <button type="submit" disabled={!valid || taken || saving}
-      class="flex h-12 items-center justify-center gap-2 rounded-2xl bg-peach font-semibold text-night-900 transition hover:bg-[#ffc4a3]">
-      {#if saving}<LoaderCircle class="size-5 animate-spin" />{level == "newborn" ? "Bringing it to life" : "Running its lessons"}{:else}Create {name.trim() || "baby"}{/if}
-    </button>
+    <div class="flex gap-2">
+      {#if !first}<button type="button" onclick={onclose} class="h-11 flex-1 rounded-[12px] bg-fill text-[15px] font-medium">Cancel</button>{/if}
+      <button type="submit" disabled={!valid || taken || saving}
+        class="flex h-11 flex-[2] items-center justify-center gap-2 rounded-[12px] bg-blue text-[15px] font-semibold text-white">
+        {#if saving}<LoaderCircle class="size-4 animate-spin" />{level == "newborn" ? "Bringing it to life" : "Running its lessons"}{:else}Create{/if}
+      </button>
+    </div>
   </form>
 </div>

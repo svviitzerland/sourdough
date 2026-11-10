@@ -1,45 +1,93 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Plus Jakarta Sans";
-  src: url("/fonts/plus-jakarta-sans.woff2") format("woff2");
-  font-weight: 400 700;
-  font-display: swap;
+/*
+  Colors follow Apple's system palette and adapt to light and dark mode.
+  Each color is a CSS variable, exposed to Tailwind as a theme token, so
+  classes like bg-surface or text-accent switch with the system appearance.
+*/
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --raised: #fbfbfd;
+  --fill: rgba(118, 118, 128, 0.12);
+  --fill-strong: rgba(118, 118, 128, 0.2);
+  --line: rgba(0, 0, 0, 0.08);
+  --ink: #1d1d1f;
+  --mute: #6e6e73;
+  --faint: #aeaeb2;
+  --accent: #ff9500;
+  --blue: #007aff;
+  --green: #34c759;
+  --red: #ff3b30;
+  --purple: #af52de;
+  --pink: #ff2d55;
+  --teal: #30b0c7;
+  --bubble: #e9e9eb;
+  --material: rgba(246, 246, 248, 0.72);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* Every color and the font live here, as Tailwind theme tokens. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --raised: #2c2c2e;
+    --fill: rgba(118, 118, 128, 0.24);
+    --fill-strong: rgba(118, 118, 128, 0.36);
+    --line: rgba(255, 255, 255, 0.1);
+    --ink: #f5f5f7;
+    --mute: #98989d;
+    --faint: #636366;
+    --accent: #ff9f0a;
+    --blue: #0a84ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --purple: #bf5af2;
+    --pink: #ff375f;
+    --teal: #40c8e0;
+    --bubble: #26252a;
+    --material: rgba(28, 28, 30, 0.72);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@theme inline {
+  --font-sans: system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-fill: var(--fill);
+  --color-fill-strong: var(--fill-strong);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-mute: var(--mute);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-blue: var(--blue);
+  --color-green: var(--green);
+  --color-red: var(--red);
+  --color-purple: var(--purple);
+  --color-pink: var(--pink);
+  --color-teal: var(--teal);
+  --color-bubble: var(--bubble);
+  --color-material: var(--material);
+  --shadow-card: var(--shadow);
+}
+
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-
-  --color-night-950: #070910;
-  --color-night-900: #0a0d16;
-  --color-night-850: #0d111c;
-  --color-night-800: #121725;
-  --color-night-700: #1a2032;
-  --color-night-600: #252c42;
-  --color-ink: #eef1f8;
-  --color-mist: #a3abc0;
-  --color-fog: #6f7891;
-  --color-peach: #ffb38a;
-  --color-peach-deep: #f08a63;
-  --color-sky: #8ab4ff;
-  --color-lilac: #c4a1ff;
-  --color-mint: #7ee0b5;
-  --color-rose: #ff8f9c;
-
-  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
-  --animate-arrive: arrive 0.45s var(--ease-soft);
-  --animate-fade: fade 0.35s var(--ease-soft);
-  --animate-breathe: breathe 1.4s ease-in-out infinite;
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-arrive: arrive 0.4s var(--ease-spring);
+  --animate-appear: appear 0.32s var(--ease-spring);
+  --animate-breathe: breathe 1.2s ease-in-out infinite;
 
   @keyframes arrive {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
   }
-  @keyframes fade {
-    from { opacity: 0; }
+  @keyframes appear {
+    from { opacity: 0; transform: scale(0.96); filter: blur(4px); }
   }
   @keyframes breathe {
-    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
     50% { opacity: 1; transform: scale(1); }
   }
 }
@@ -47,19 +95,35 @@
 @layer base {
   html, body, #app { height: 100%; }
   body {
-    @apply bg-night-900 text-ink font-sans antialiased;
+    @apply bg-bg text-ink font-sans antialiased;
     font-size: 15px;
+    letter-spacing: -0.008em;
   }
-  ::selection { @apply bg-peach text-night-900; }
-  * { scrollbar-width: thin; scrollbar-color: var(--color-night-600) transparent; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-peach; }
-  button { @apply cursor-pointer disabled:cursor-default disabled:opacity-45; }
+  ::selection { background: color-mix(in srgb, var(--blue) 30%, transparent); }
+  * { scrollbar-width: thin; scrollbar-color: var(--fill-strong) transparent; }
+  :focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 45%, transparent); outline-offset: 1px; }
+  button { @apply cursor-pointer select-none disabled:cursor-default disabled:opacity-40; }
+  /* Feedback on press, the instant it happens. */
+  button:not(:disabled):active { transform: scale(0.97); transition: transform 90ms ease-out; }
 }
 
-@utility glass {
-  @apply bg-night-850/80 border border-white/[0.06] backdrop-blur-xl;
+/* A translucent layer: content shows through, softly. */
+@utility material {
+  background: var(--material);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* Large text tightens, small text opens up a little. */
+@utility title {
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --material: var(--surface); }
 }

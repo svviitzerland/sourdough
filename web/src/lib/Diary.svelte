@@ -16,64 +16,68 @@
 
   function describe(m) {
     if (m.event == "born") {
-      return { icon: Baby, tint: "text-peach", text: m.level == "newborn" ? "Was born, knowing nothing" : `Was born with the ${m.level} starter pack` }
+      return { icon: Baby, tint: "text-accent", text: m.level == "newborn" ? "Was born, knowing nothing" : `Was born with the ${m.level} starter pack` }
     }
-    if (m.event == "sleep") return { icon: Moon, tint: "text-sky", text: `Slept, and let go of ${m.forgotten || 0} unused memories` }
-    if (m.event == "lesson") return { icon: GraduationCap, tint: "text-lilac", text: `Took the ${m.lesson} lesson, ${m.score} of ${m.total} right` }
+    if (m.event == "sleep") return { icon: Moon, tint: "text-blue", text: `Slept, and let go of ${m.forgotten || 0} unused memories` }
+    if (m.event == "lesson") return { icon: GraduationCap, tint: "text-purple", text: `Took the ${m.lesson} lesson, ${m.score} of ${m.total} right` }
     if (m.event == "feedback") {
       return m.amount > 0
-        ? { icon: ThumbsUp, tint: "text-mint", text: "Was told it was right" }
-        : { icon: ThumbsDown, tint: "text-rose", text: "Was told it was wrong" }
+        ? { icon: ThumbsUp, tint: "text-green", text: "Was told it was right" }
+        : { icon: ThumbsDown, tint: "text-red", text: "Was told it was wrong" }
     }
     if (m.event == "taught") {
       const what = m.what == "name" ? `the word "${m.answer}" for a picture`
         : m.what == "reply" ? `to answer "${m.prompt}" with "${m.answer}"` : `to ${m.action} on "${m.prompt}"`
-      return { icon: GraduationCap, tint: "text-peach", text: `Was taught ${what}` }
+      return { icon: GraduationCap, tint: "text-accent", text: `Was taught ${what}` }
     }
-    if (m.event == "corrected") return { icon: ThumbsDown, tint: "text-rose", text: `Was corrected, the right answer is "${m.answer}"` }
-    if (m.event == "explored") return { icon: FolderOpen, tint: "text-mint", text: `Explored ${m.file}${m.said ? ` and said "${m.said}"` : ""}` }
+    if (m.event == "corrected") return { icon: ThumbsDown, tint: "text-red", text: `Was corrected, the right answer is "${m.answer}"` }
+    if (m.event == "fed") {
+      const from = m.source == "ai" ? `an AI teacher${m.topic ? ` about ${m.topic}` : ""}` : m.source == "pictures" ? "pictures" : "a file"
+      return { icon: GraduationCap, tint: "text-purple", text: `Learned from ${from}, ${m.correct} of ${m.taught} right` }
+    }
+    if (m.event == "explored") return { icon: FolderOpen, tint: "text-green", text: `Explored ${m.file}${m.said ? ` and said "${m.said}"` : ""}` }
     const heard = m.heard ? `Heard "${m.heard}"` : m.saw ? "Looked at something" : "Was quiet"
     const did = m.action ? `, then did ${m.action}` : m.said ? `, said "${m.said}"` : ""
-    if (m.event == "initiative") return { icon: Sparkles, tint: "text-peach", text: `On its own${did}` }
-    return { icon: MessageCircle, tint: "text-mist", text: `${heard}${did}` }
+    if (m.event == "initiative") return { icon: Sparkles, tint: "text-accent", text: `On its own${did}` }
+    return { icon: MessageCircle, tint: "text-mute", text: `${heard}${did}` }
   }
 
   const time = (m) => new Date(m.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 </script>
 
-<div class="grid content-start gap-5 overflow-y-auto px-5 pb-6 pt-1">
+<div class="grid gap-5 p-4 pb-8">
   {#if baby.state}
     <div class="grid grid-cols-3 gap-2">
-      {#each [[Clock, baby.state.age, "moments lived"], [BookOpenText, baby.state.vocabulary.length, "words known"], [Waypoints, baby.state.links, "connections"]] as [Icon, value, label]}
-        <div class="grid gap-1 rounded-2xl bg-night-800 p-3">
-          <Icon class="size-4 text-fog" />
-          <b class="text-2xl font-bold">{value}</b>
-          <span class="text-xs text-fog">{label}</span>
+      {#each [[Clock, baby.state.age, "moments lived", "text-blue"], [BookOpenText, baby.state.vocabulary.length, "words known", "text-accent"], [Waypoints, baby.state.links, "connections", "text-purple"]] as [Icon, value, label, tint]}
+        <div class="grid gap-0.5 rounded-2xl bg-surface p-3 shadow-card">
+          <Icon class="size-4 {tint}" />
+          <b class="title mt-1 text-2xl">{value}</b>
+          <span class="text-[12px] text-mute">{label}</span>
         </div>
       {/each}
     </div>
 
     <button onclick={async () => { await sleep(); load() }}
-      class="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-night-800 p-3.5 text-left transition hover:border-sky/30 hover:bg-night-700">
-      <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-sky/10 text-sky"><Moon class="size-5" /></span>
+      class="flex items-center gap-3 rounded-2xl bg-surface p-3.5 text-left shadow-card hover:bg-raised">
+      <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-blue text-white"><Moon class="size-5" /></span>
       <span>
         <b class="block text-[15px] font-semibold">Put it to sleep</b>
-        <span class="text-[13px] text-fog">Sleep turns today into lasting memory. It also sleeps by itself when tired.</span>
+        <span class="text-[13px] text-mute">Sleep turns today into lasting memory. It also sleeps by itself when tired.</span>
       </span>
     </button>
   {/if}
 
-  <h2 class="mt-1 text-lg font-bold">Its life</h2>
-  <ol class="relative grid gap-1 before:absolute before:bottom-3 before:left-[15px] before:top-3 before:w-px before:bg-white/[0.07]">
+  <h2 class="title text-xl">Its life</h2>
+  <ol class="divide-y divide-line overflow-hidden rounded-2xl bg-surface shadow-card">
     {#each moments as m}
       {@const d = describe(m)}
-      <li class="relative grid grid-cols-[32px_1fr_auto] items-start gap-3 py-1.5">
-        <span class="grid size-8 place-items-center rounded-full bg-night-800 {d.tint}"><d.icon class="size-4" /></span>
-        <p class="pt-1.5 text-sm text-mist">{d.text}</p>
-        <time class="pt-1.5 text-xs text-fog">{time(m)}</time>
+      <li class="grid grid-cols-[22px_1fr_auto] items-start gap-3 px-3.5 py-2.5">
+        <d.icon class="mt-0.5 size-[18px] {d.tint}" />
+        <p class="text-[13px]">{d.text}</p>
+        <time class="text-[12px] text-faint">{time(m)}</time>
       </li>
     {:else}
-      <li class="text-sm text-fog">Nothing has happened yet.</li>
+      <li class="px-3.5 py-3 text-[13px] text-mute">Nothing has happened yet.</li>
     {/each}
   </ol>
 </div>

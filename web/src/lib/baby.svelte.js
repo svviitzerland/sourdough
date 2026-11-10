@@ -22,6 +22,8 @@ export const baby = $state({
   view: null,          // what is in front of its eyes: { kind, src, note }
   busy: false,
   thinking: false,     // waiting for an answer to something you said or showed
+  listening: false,    // the microphone is on
+  moment: null,        // the latest thing that happened to its face: { kind, at, words, surprise, action }
   voice: true,
   lang: "en",
   thinkingAt: 0,
@@ -130,6 +132,7 @@ function receive(r, context = {}) {
     image: context.image || null,
   })
   baby.thinkingAt = performance.now()
+  feel(r.mode, { words: r.words.filter((w) => w != "?").length, surprise: r.surprise || 0, action: r.action })
   speak(r)
 }
 
@@ -175,14 +178,21 @@ export async function observe({ text = "", passive = false, outcome_of = null } 
 
 export const say = (text) => observe({ text })
 
+// Something its face should react to.
+function feel(kind, details = {}) {
+  baby.moment = { kind, at: performance.now(), words: 0, surprise: 0, action: null, ...details }
+}
+
 export function judge(message, right) {
   baby.settled = message.id
+  feel(right ? "praised" : "corrected")
   return observe({ text: right ? yes() : no() })
 }
 
 // It was wrong: say no and teach the right answer in one step.
 export function correct(message, answer) {
   baby.settled = message.id
+  feel("corrected")
   const mine = { from: "you", text: `${no()}, ${answer}`, image: null }
   const body = { answer, prompt: message.prompt, image: message.image }
   return send("/api/correct", body, { prompt: message.prompt, image: message.image }, mine)
@@ -295,10 +305,33 @@ export async function sleep() {
   const data = await api("/api/sleep", {})
   apply(data.state)
   note(`${baby.name} slept and replayed ${data.report.replayed} memories`)
+  feel("sleep")
   refresh()
 }
 
 export const journal = () => api("/api/journal")
+
+// Feeding from outside: pairs, named pictures, or another AI.
+
+export const feeders = () => api("/api/feeders")
+
+export async function feedFrom(body) {
+  baby.busy = true
+  baby.thinking = true
+  try {
+    const data = await api("/api/feed", body)
+    apply(data.state)
+    const what = body.source == "ai" ? `${body.provider} taught it about ${body.topic || "everyday things"}`
+      : body.source == "pictures" ? "It learned from your pictures" : "It learned from your file"
+    note(`${what}: ${data.report.correct} of ${data.report.taught} right`)
+    if (data.report.correct) feel("praised")
+    refresh()
+    return data.report
+  } finally {
+    baby.busy = false
+    baby.thinking = false
+  }
+}
 
 // Reading a picture file into a data URL, for the teach forms.
 export function readPicture(file) {

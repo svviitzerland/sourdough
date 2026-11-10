@@ -11,11 +11,22 @@
     ["hear", "Hears"], ["say", "Says"], ["action", "Actions"],
   ]
   const SENSES = new Set(["color", "shape", "sound"])
-  // Each layer has its own soft color, so the strands glow in many colors.
-  const TINT = {
-    shape: "236, 238, 245", sound: "236, 238, 245", name: "138, 180, 255",
-    hear: "196, 161, 255", say: "255, 179, 138", action: "126, 224, 181",
+  // Each layer has its own system color, so the strands glow in many colors.
+  // Light and dark mode each get their own set, like Apple's system colors.
+  const THEMES = {
+    light: {
+      tint: { shape: "142, 142, 147", sound: "142, 142, 147", name: "0, 122, 255", hear: "175, 82, 222", say: "255, 149, 0", action: "52, 199, 89" },
+      ink: "#1d1d1f", mute: "#8e8e93", surface: "#ffffff", ring: "rgba(0, 0, 0, 0.18)", pulse: "0, 122, 255", blend: "source-over", strength: 1.3,
+    },
+    dark: {
+      tint: { shape: "152, 152, 157", sound: "152, 152, 157", name: "10, 132, 255", hear: "191, 90, 242", say: "255, 159, 10", action: "48, 209, 88" },
+      ink: "#f5f5f7", mute: "#8e8e93", surface: "#1c1c1e", ring: "rgba(255, 255, 255, 0.8)", pulse: "255, 255, 255", blend: "lighter", strength: 1,
+    },
   }
+  const scheme = window.matchMedia("(prefers-color-scheme: dark)")
+  let theme = THEMES[scheme.matches ? "dark" : "light"]
+  scheme.addEventListener?.("change", (e) => (theme = THEMES[e.matches ? "dark" : "light"]))
+  const FONT = "system-ui, -apple-system, sans-serif"
 
   let box
   let canvas
@@ -135,7 +146,7 @@
     const img = colored && images.get(colored.picture)
     if (img && img.rgb) return img.rgb
     const right = a.x > b.x ? a : b
-    return TINT[right.column] || "236, 238, 245"
+    return theme.tint[right.column] || theme.tint.shape
   }
 
   function draw() {
@@ -155,7 +166,7 @@
 
     if (!nodes.length) {
       ctx.beginPath()
-      ctx.fillStyle = `rgba(255, 179, 138, ${0.35 + 0.35 * breath})`
+      ctx.fillStyle = `rgba(${theme.tint.say}, ${0.35 + 0.35 * breath})`
       ctx.arc(width / 2, height / 2 - 24, 6 + 5 * breath, 0, Math.PI * 2)
       ctx.fill()
       return
@@ -167,8 +178,8 @@
     const near = new Set(focus ? [focus.id, ...(focus.links || []).map((e) => other(e, focus).id)] : [])
 
     if (headers) {
-      ctx.font = "600 11px 'Plus Jakarta Sans', sans-serif"
-      ctx.fillStyle = "#6f7891"
+      ctx.font = `600 11px ${FONT}`
+      ctx.fillStyle = theme.mute
       ctx.textAlign = "center"
       for (const [kind, title] of columns) {
         const any = nodes.find((n) => n.column == kind)
@@ -176,7 +187,7 @@
       }
     }
 
-    ctx.globalCompositeOperation = "lighter"
+    ctx.globalCompositeOperation = theme.blend
     for (const e of edges) {
       const a = byId.get(e.from)
       const b = byId.get(e.to)
@@ -184,7 +195,7 @@
       const lit = !focus || e.from == focus.id || e.to == focus.id
       const live = active.has(e.from) || active.has(e.to)
       const strands = e.weight > 0.6 ? 3 : e.weight > 0.3 ? 2 : 1
-      const alpha = (0.08 + e.weight * 0.4) * breath * (lit ? 1 : 0.07) * (live ? 1 + thinking : 1)
+      const alpha = Math.min(1, (0.08 + e.weight * 0.4) * theme.strength) * breath * (lit ? 1 : 0.07) * (live ? 1 + thinking : 1)
       ctx.strokeStyle = `rgba(${edgeColor(e)}, ${alpha})`
       ctx.lineWidth = (0.7 + e.weight * 1.4) / Math.sqrt(k)
       for (let i = 0; i < strands; i++) {
@@ -199,7 +210,7 @@
         for (let i = 0; i < 3; i++) {
           const [px, py] = pointOn(a, b, (t * (0.35 + thinking * 0.5) + i / 3 + e.seed) % 1)
           ctx.beginPath()
-          ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + 0.4 * thinking})`
+          ctx.fillStyle = `rgba(${theme.pulse}, ${0.6 + 0.4 * thinking})`
           ctx.arc(px, py, 1.8 / Math.sqrt(k), 0, Math.PI * 2)
           ctx.fill()
         }
@@ -211,7 +222,7 @@
       if (n.x == null) continue
       if (active.has(n.id)) {
         ctx.beginPath()
-        ctx.strokeStyle = `rgba(255, 179, 138, ${0.45 + 0.35 * Math.sin(t * 4)})`
+        ctx.strokeStyle = `rgba(${theme.tint.say}, ${0.45 + 0.35 * Math.sin(t * 4)})`
         ctx.lineWidth = 1.5
         ctx.arc(n.x, n.y, 14 + 2 * Math.sin(t * 4), 0, Math.PI * 2)
         ctx.stroke()
@@ -225,17 +236,17 @@
     const img = images.get(n.picture)
     ctx.globalAlpha = dimmed ? 0.4 : 1
     ctx.lineWidth = focused ? 2 : 1.2
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)"
+    ctx.strokeStyle = theme.ring
     if (n.kind == "color") {
       ctx.beginPath()
       ctx.arc(n.x, n.y, 8, 0, Math.PI * 2)
-      ctx.fillStyle = img && img.rgb ? `rgb(${img.rgb})` : "#6f7891"
+      ctx.fillStyle = img && img.rgb ? `rgb(${img.rgb})` : theme.mute
       ctx.fill()
       ctx.stroke()
     } else if (n.kind == "shape" || n.kind == "sound") {
       ctx.beginPath()
       ctx.arc(n.x, n.y, 10, 0, Math.PI * 2)
-      ctx.fillStyle = "#0c1020"
+      ctx.fillStyle = theme.surface
       ctx.fill()
       if (img && img.complete && n.kind == "shape") {
         ctx.save()
@@ -249,13 +260,13 @@
       const action = n.kind == "action"
       ctx.beginPath()
       ctx.arc(n.x, n.y, action ? 6 : 3.5, 0, Math.PI * 2)
-      ctx.fillStyle = `rgb(${TINT[n.column] || "236, 238, 245"})`
+      ctx.fillStyle = `rgb(${theme.tint[n.column] || theme.tint.shape})`
       ctx.fill()
       if (labeled) {
-        ctx.font = action ? "600 14px 'Plus Jakarta Sans', sans-serif" : "500 13px 'Plus Jakarta Sans', sans-serif"
+        ctx.font = action ? `600 14px ${FONT}` : `500 13px ${FONT}`
         ctx.textAlign = "left"
         ctx.textBaseline = "middle"
-        ctx.fillStyle = focused ? "#ffb38a" : "#e6e9f2"
+        ctx.fillStyle = focused ? `rgb(${theme.tint.say})` : theme.ink
         ctx.fillText(n.label, n.x + 10, n.y + 1)
       }
     }
@@ -350,33 +361,33 @@
 
   {#if !nodes.length}
     <div class="pointer-events-none absolute inset-x-0 top-1/2 mt-6 grid justify-items-center gap-1 text-center">
-      <Brain class="mb-1 size-6 text-fog" />
+      <Brain class="mb-1 size-6 text-faint" />
       <p class="font-semibold">Its mind is still empty</p>
-      <p class="max-w-xs text-sm text-mist">Talk to it and show it things. Every word it learns grows here.</p>
+      <p class="max-w-xs text-sm text-mute">Talk to it and show it things. Every word it learns grows here.</p>
     </div>
   {/if}
 
   {#if tip}
-    <span class="pointer-events-none absolute translate-x-3.5 translate-y-3.5 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[13px] text-night-900"
+    <span class="pointer-events-none absolute translate-x-3.5 translate-y-3.5 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[13px] text-surface"
       style:left="{tip.x}px" style:top="{tip.y}px">{tip.text}</span>
   {/if}
 
   {#if pinned}
-    <aside class="glass animate-arrive absolute right-4 top-4 grid w-64 gap-1 rounded-2xl p-4 text-sm text-mist">
+    <aside class="material border border-line shadow-card animate-arrive absolute right-4 top-4 grid w-64 gap-1 rounded-2xl p-4 text-sm text-mute">
       <div class="flex items-start justify-between gap-2">
         <b class="text-xl font-bold text-ink">{describe(pinned)}</b>
-        <button onclick={() => (pinned = null)} class="grid size-7 place-items-center rounded-full hover:bg-night-700" title="Close">
+        <button onclick={() => (pinned = null)} class="grid size-7 place-items-center rounded-full hover:bg-fill" title="Close">
           <X class="size-4" />
         </button>
       </div>
-      <span class="text-xs text-fog">{pinned.kind}, {(pinned.links || []).length} links</span>
+      <span class="text-xs text-faint">{pinned.kind}, {(pinned.links || []).length} links</span>
       {#if details.length}
         <ol class="mt-2 grid gap-1.5">
           {#each details as d}
             <li class="flex items-center justify-between gap-2">
               <span class="truncate">{d.name}{d.habit ? ", habit" : ""}</span>
-              <span class="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-night-600">
-                <span class="block h-full rounded-full bg-peach" style:width="{Math.round(d.weight * 100)}%"></span>
+              <span class="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-fill-strong">
+                <span class="block h-full rounded-full bg-accent" style:width="{Math.round(d.weight * 100)}%"></span>
               </span>
             </li>
           {/each}
@@ -387,17 +398,17 @@
 
   {#if nodes.length}
     <div class="pointer-events-none absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-      <div class="glass pointer-events-auto flex items-center gap-1 rounded-xl p-1">
-        <button onclick={() => zoom(1.25)} title="Zoom in" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><ZoomIn class="size-4" /></button>
-        <button onclick={() => zoom(0.8)} title="Zoom out" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><ZoomOut class="size-4" /></button>
-        <button onclick={() => (view = { x: 0, y: 0, k: 1 })} title="Fit" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><Maximize2 class="size-4" /></button>
-        <span class="hidden px-2 text-xs text-fog xl:inline">Drag to move, click a concept</span>
+      <div class="material border border-line shadow-card pointer-events-auto flex items-center gap-1 rounded-xl p-1">
+        <button onclick={() => zoom(1.25)} title="Zoom in" class="grid size-8 place-items-center rounded-lg text-mute hover:bg-fill hover:text-ink"><ZoomIn class="size-4" /></button>
+        <button onclick={() => zoom(0.8)} title="Zoom out" class="grid size-8 place-items-center rounded-lg text-mute hover:bg-fill hover:text-ink"><ZoomOut class="size-4" /></button>
+        <button onclick={() => (view = { x: 0, y: 0, k: 1 })} title="Fit" class="grid size-8 place-items-center rounded-lg text-mute hover:bg-fill hover:text-ink"><Maximize2 class="size-4" /></button>
+        <span class="hidden px-2 text-xs text-faint xl:inline">Drag to move, click a concept</span>
       </div>
-      <div class="glass hidden flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 text-xs text-mist lg:flex">
-        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-sky"></i>names</span>
-        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-lilac"></i>hears</span>
-        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-peach"></i>says</span>
-        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-mint"></i>actions</span>
+      <div class="material border border-line shadow-card hidden flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 text-xs text-mute lg:flex">
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-blue"></i>names</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-purple"></i>hears</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-accent"></i>says</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-green"></i>actions</span>
       </div>
     </div>
   {/if}
