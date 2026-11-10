@@ -63,7 +63,7 @@ Tests read like a baby's milestones: `test_learns_a_name_from_one_example`, `tes
 
 ## The web app
 
-The web app is a separate Svelte 5 + Vite project in `web/`. It only talks to the HTTP API (`web/src/lib/api.js`), and all state and API calls live in `web/src/lib/baby.svelte.js`. Components read that state and call its functions.
+The web app is a separate Svelte 5 + Vite project in `web/`, styled with Tailwind CSS v4 and icons from Lucide (`@lucide/svelte`). It only talks to the HTTP API (`web/src/lib/api.js`), and all state and API calls live in `web/src/lib/baby.svelte.js`. Components read that state and call its functions.
 
 ```bash
 sourdough --no-browser          # the API on :8008
@@ -76,7 +76,7 @@ The build is committed so `pip install` users get the app without Node. Rebuild 
 
 The layout is for people who are not technical: the baby's mind fills the left (a canvas of its concept network in layers, colors, shapes, names, hears, says, actions), a panel on the right has three tabs, Talk (conversation, suggestions, say bar), Teach (lessons, actions) and Diary (its life). A picker chooses a baby level on the first visit. Keep new controls inside a tab, not in the header.
 
-Look and feel: a midnight blue ground, soft white text and one warm peach accent (`web/src/app.css` holds every color). The mind's strands glow in the color of the layer they lead into (names blue, hears lilac, says peach, actions mint) or of the color concept they touch. One friendly font, Plus Jakarta Sans, self hosted in `web/public/fonts`. Rounded, quiet surfaces. No emoji.
+Look and feel: a midnight blue ground, soft white text and one warm peach accent (every color and the font are Tailwind theme tokens in `web/src/app.css`, used as classes like `bg-night-800` or `text-peach`). The mind's strands glow in the color of the layer they lead into (names blue, hears lilac, says peach, actions mint) or of the color concept they touch. One friendly font, Plus Jakarta Sans, self hosted in `web/public/fonts`. Rounded, quiet surfaces. Style with Tailwind classes in the markup, not `<style>` blocks. Icons come only from Lucide. No emoji anywhere.
 
 ## Common tasks
 
