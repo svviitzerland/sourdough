@@ -1,4 +1,4 @@
-// Everything the app knows about the baby it is showing, and every way to talk to it.
+// Everything the app knows about the open baby, and every way to talk to it.
 // Components read `baby` and call the functions below. Nothing else talks to the API.
 
 import { api } from "./api.js"
@@ -6,10 +6,15 @@ import { api } from "./api.js"
 let media = null    // the <video> or <img> the baby is looking at
 let stream = null   // the live camera, when it is on
 let nextId = 1
+let timers = []
 
 export const baby = $state({
-  name: "",
+  ready: false,        // the first answer from the server has arrived
+  name: null,          // null until a baby exists
+  profile: null,
   state: null,
+  babies: [],
+  levels: [],
   lessons: [],
   graph: { nodes: [], edges: [], active: [] },
   suggestions: [],
@@ -20,32 +25,31 @@ export const baby = $state({
   voice: true,
   lang: "en",
   thinkingAt: 0,
-  judged: 0,           // the id of the last message that was marked right or wrong
+  settled: 0,          // the id of the last message that was answered, judged or corrected
 })
 
 export const yes = () => (baby.lang == "id" ? "iya" : "yes")
 export const no = () => (baby.lang == "id" ? "bukan" : "no")
 
-// Starting up and switching babies.
+// Starting up.
 
 export async function boot() {
-  const [status, lessons] = await Promise.all([api("/api/state"), api("/api/lessons")])
+  const [status, lessons, list] = await Promise.all([api("/api/state"), api("/api/lessons"), api("/api/babies")])
   baby.lessons = lessons.lessons
-  settle(status)
-  setInterval(tick, 5000)
-  setInterval(() => { if (stream) observe({ passive: true }) }, 1500)
+  baby.babies = list.babies
+  baby.levels = list.levels
+  if (status.name) settle(status)
+  baby.ready = true
+  timers.forEach(clearInterval)
+  timers = [setInterval(tick, 5000), setInterval(() => { if (stream) observe({ passive: true }) }, 1500)]
 }
-
-export async function choose(name, level) {
-  settle(await api("/api/baby", { name, level }))
-}
-
-export const babies = () => api("/api/babies")
 
 function settle(status) {
+  closeView()
   baby.name = status.name
+  baby.profile = status.profile
   baby.messages = []
-  baby.judged = 0
+  baby.settled = 0
   apply(status.state)
   note(status.state.age ? `${status.name} is awake and listening` : `${status.name} was just born and knows nothing yet`)
   refresh()
@@ -57,9 +61,48 @@ function apply(state) {
 }
 
 export async function refresh() {
+  if (!baby.name) return
   const [graph, ideas] = await Promise.all([api("/api/graph"), api("/api/suggestions")])
   baby.graph = graph
   baby.suggestions = ideas.prompts
+}
+
+// Characters.
+
+export async function loadBabies() {
+  const list = await api("/api/babies")
+  baby.babies = list.babies
+  baby.levels = list.levels
+  return list
+}
+
+export async function createBaby({ name, about, color, level }) {
+  settle(await api("/api/babies", { name, about, color, level }))
+  await loadBabies()
+}
+
+export async function openBaby(name) {
+  settle(await api("/api/baby", { name }))
+  await loadBabies()
+}
+
+export async function editBaby({ about, color }) {
+  const status = await api("/api/baby/edit", { about, color })
+  baby.profile = status.profile
+  await loadBabies()
+}
+
+export async function deleteBaby(name) {
+  const list = await api("/api/baby/delete", { name })
+  baby.babies = list.babies
+  if (list.current) {
+    if (list.current != baby.name) settle(await api("/api/state"))
+  } else {
+    baby.name = null
+    baby.profile = null
+    baby.state = null
+    baby.messages = []
+  }
 }
 
 // Talking and showing.
@@ -73,7 +116,8 @@ export function note(text, image = null) {
   push({ from: "note", text, image })
 }
 
-function receive(r) {
+// What it said, plus what it was answering, so a correction can teach the right thing.
+function receive(r, context = {}) {
   if (r.mode == "silent") return
   push({
     from: "baby",
@@ -82,7 +126,8 @@ function receive(r) {
     mode: r.mode,
     face: r.expression.replace(/\*/g, ""),
     initiative: r.initiative,
-    judgeable: ["speak", "imitate", "do", "practice"].includes(r.mode),
+    prompt: context.prompt || "",
+    image: context.image || null,
   })
   baby.thinkingAt = performance.now()
   speak(r)
@@ -101,40 +146,68 @@ function snapshot() {
   return canvas.toDataURL("image/jpeg", 0.85)
 }
 
-export async function observe({ text = "", passive = false, outcome_of = null } = {}) {
-  if (passive && baby.busy) return
-  const image = baby.view && baby.view.kind != "found" ? snapshot() : null
-  if (!text && !image) return
-  if (!passive && !outcome_of) push({ from: "you", text, image })
+async function send(path, body, context, mine = null) {
+  if (mine) push(mine)
   baby.busy = true
-  baby.thinking = !passive
+  baby.thinking = !body.passive
   try {
-    const data = await api("/api/observe", { text, image, passive, outcome_of })
+    const data = await api(path, body)
     apply(data.state)
-    receive(data.response)
+    receive(data.response, context)
     consequence(data)
-    if (data.response.mode != "silent" || text) refresh()
+    if (data.response.mode != "silent" || !body.passive) refresh()
+    return data
   } catch (e) {
-    note(`Could not reach its brain. ${e.message}`)
+    note(`Something went wrong. ${e.message}`)
   } finally {
     baby.busy = false
     baby.thinking = false
   }
 }
 
+export async function observe({ text = "", passive = false, outcome_of = null } = {}) {
+  if (passive && baby.busy) return
+  const image = baby.view && baby.view.kind != "found" ? snapshot() : null
+  if (!text && !image) return
+  const mine = !passive && !outcome_of ? { from: "you", text, image } : null
+  return send("/api/observe", { text, image, passive, outcome_of }, { prompt: text, image }, mine)
+}
+
 export const say = (text) => observe({ text })
 
 export function judge(message, right) {
-  baby.judged = message.id
-  observe({ text: right ? yes() : no() })
+  baby.settled = message.id
+  return observe({ text: right ? yes() : no() })
+}
+
+// It was wrong: say no and teach the right answer in one step.
+export function correct(message, answer) {
+  baby.settled = message.id
+  const mine = { from: "you", text: `${no()}, ${answer}`, image: null }
+  const body = { answer, prompt: message.prompt, image: message.image }
+  return send("/api/correct", body, { prompt: message.prompt, image: message.image }, mine)
+}
+
+// It asked "?" about something: tell it what it is.
+export function answer(message, word) {
+  baby.settled = message.id
+  const mine = { from: "you", text: word, image: message.image }
+  return send("/api/teach", { kind: "name", answer: word, image: message.image }, { image: message.image }, mine)
+}
+
+// The Teach tab's forms: name a picture, an answer, an action.
+export async function teach(form) {
+  const shown = { name: `This is ${form.answer}`, reply: `When I say "${form.prompt}", you say "${form.answer}"`,
+    action: `When I say "${form.prompt}", you ${form.action}` }[form.kind]
+  return send("/api/teach", form, { prompt: form.prompt, image: form.image }, { from: "you", text: shown, image: form.image })
 }
 
 function consequence(data) {
   const found = data.outcome
   if (found) {
     baby.view = { kind: "found", src: found.image, note: `found ${found.file}` }
-    note(`It explored its world and found ${found.file}${found.text ? `: "${found.text}"` : ""}`, found.image)
-    receive(found.response)
+    note(`It explored its folder and found ${found.file}${found.text ? `: "${found.text}"` : ""}`, found.image)
+    receive(found.response, { image: found.image, prompt: found.text || "" })
   }
   if (data.response.action == "glance" && stream) {
     setTimeout(() => observe({ outcome_of: "glance" }), 600)
@@ -142,7 +215,7 @@ function consequence(data) {
 }
 
 async function tick() {
-  if (baby.busy || document.hidden) return
+  if (!baby.name || baby.busy || document.hidden) return
   try {
     const data = await api("/api/tick", { seconds: 5 })
     apply(data.state)
@@ -203,7 +276,7 @@ export function closeView() {
   media = null
 }
 
-// Teaching, actions, sleep and the diary.
+// Lessons, actions, sleep and the diary.
 
 export async function lesson(name, language) {
   baby.busy = true
@@ -218,14 +291,6 @@ export async function lesson(name, language) {
   }
 }
 
-export async function showAction(action) {
-  const data = await api("/api/show", { action })
-  apply(data.state)
-  receive(data.response)
-  consequence(data)
-  refresh()
-}
-
 export async function sleep() {
   const data = await api("/api/sleep", {})
   apply(data.state)
@@ -234,3 +299,13 @@ export async function sleep() {
 }
 
 export const journal = () => api("/api/journal")
+
+// Reading a picture file into a data URL, for the teach forms.
+export function readPicture(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}

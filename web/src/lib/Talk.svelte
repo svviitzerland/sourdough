@@ -1,10 +1,10 @@
 <script>
   import { tick } from "svelte"
-  import { Camera, CameraOff, ImagePlus, Mic, ArrowUp, X, Check, Zap } from "@lucide/svelte"
+  import { Camera, CameraOff, ImagePlus, Mic, ArrowUp, X, Check, Zap, CornerDownRight } from "@lucide/svelte"
   import {
-    baby, say, judge, startCamera, showPicture, closeView, setMedia, cameraStream, note,
+    baby, say, judge, correct, answer, startCamera, showPicture, closeView, setMedia, cameraStream, note,
   } from "./baby.svelte.js"
-  import Logo from "./Logo.svelte"
+  import Avatar from "./Avatar.svelte"
 
   let text = $state("")
   let list
@@ -13,9 +13,26 @@
   let listening = $state(null)
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
-  const lastJudgeable = $derived(
-    [...baby.messages].reverse().find((m) => m.from == "baby" && m.judgeable)?.id ?? 0,
-  )
+  // Only the newest thing it said can be judged, corrected or answered.
+  const latest = $derived([...baby.messages].reverse().find((m) => m.from == "baby")?.id ?? 0)
+  let fixing = $state(0)      // the message being corrected
+  let fix = $state("")
+
+  const open = (m) => m.id == latest && baby.settled < m.id
+  const asks = (m) => m.mode == "ask" && m.image
+  const judgeable = (m) => ["speak", "imitate", "do", "practice"].includes(m.mode)
+  // It babbled or did not understand something you said: you can teach it the answer.
+  const teachable = (m) => !judgeable(m) && !!m.prompt
+
+  function sendFix(e, m) {
+    e.preventDefault()
+    const words = fix.trim()
+    if (!words) return
+    fix = ""
+    fixing = 0
+    if (asks(m)) answer(m, words)
+    else correct(m, words)
+  }
 
   $effect(() => {
     baby.messages.length
@@ -77,9 +94,10 @@
   <ol bind:this={list} aria-live="polite" class="flex list-none flex-col gap-4 overflow-y-auto px-5 pb-4 pt-1">
     {#if baby.messages.length <= 1}
       <li class="animate-arrive mx-auto grid max-w-xs justify-items-center gap-2 py-8 text-center">
-        <Logo size={52} />
+        <Avatar profile={baby.profile} size="size-14" text="text-xl" />
         <h2 class="mt-1 text-xl font-bold">Say hi to {baby.name}</h2>
-        <p class="text-sm text-mist">It learns like a small child. Talk to it, show it things and say what they are, then tell it if it got them right.</p>
+        {#if baby.profile?.about}<p class="text-sm italic text-mist">{baby.profile.about}</p>{/if}
+        <p class="text-sm text-mist">It learns like a small child. Show it something and say what it is, ask it things, and when it gets something wrong, tell it the right answer.</p>
       </li>
     {/if}
 
@@ -90,10 +108,11 @@
           <p>{m.text || "Look at this"}</p>
         </li>
       {:else if m.from == "baby"}
-        <li class="animate-arrive flex max-w-[88%] gap-3 self-start">
-          <span class="mt-1 shrink-0"><Logo size={28} /></span>
+        <li class="animate-arrive flex max-w-[90%] gap-3 self-start">
+          <span class="mt-1"><Avatar profile={baby.profile} size="size-8" /></span>
           <div class="min-w-0">
             {#if m.initiative}<p class="text-xs font-medium text-fog">On its own</p>{/if}
+            {#if asks(m)}<img src={m.image} alt="What it is asking about" class="mb-2 mt-1 w-28 rounded-2xl" />{/if}
             <p class="break-words text-[26px] font-bold leading-tight tracking-tight">
               {#if m.action}
                 <span class="mr-1.5 inline-flex translate-y-[-3px] items-center gap-1 rounded-full bg-mint/15 px-2.5 py-1 align-middle text-xs font-semibold text-mint">
@@ -103,17 +122,48 @@
               {m.words.join(" ") || (m.action ? "" : "...")}
             </p>
             {#if m.face}<p class="text-sm text-fog">{m.face}</p>{/if}
-            {#if m.id == lastJudgeable && baby.judged < m.id}
-              <div class="mt-3 flex gap-2">
-                <button onclick={() => judge(m, true)}
-                  class="flex h-9 items-center gap-1.5 rounded-full border border-mint/25 bg-mint/10 px-4 text-sm font-medium text-mint transition hover:bg-mint/20">
-                  <Check class="size-4" />Right
+
+            {#if open(m) && asks(m)}
+              <p class="mt-2 text-sm text-mist">It wonders what this is.</p>
+              <form onsubmit={(e) => sendFix(e, m)} class="mt-2 flex w-72 max-w-full items-center gap-2 rounded-2xl border border-peach/30 bg-peach/[0.06] p-1.5 pl-3">
+                <CornerDownRight class="size-4 shrink-0 text-peach" />
+                <input bind:value={fix} placeholder="What is it?" aria-label="What is it?"
+                  class="h-9 min-w-0 flex-1 bg-transparent text-sm placeholder:text-mist focus:outline-none" />
+                <button type="submit" class="h-9 rounded-xl bg-peach px-3 text-sm font-semibold text-night-900 hover:bg-[#ffc4a3]">Tell</button>
+              </form>
+            {:else if open(m) && (judgeable(m) || teachable(m))}
+              {#if fixing == m.id}
+                <form onsubmit={(e) => sendFix(e, m)} class="mt-3 grid w-80 max-w-full gap-2">
+                  <div class="flex items-center gap-2 rounded-2xl border border-rose/30 bg-rose/[0.06] p-1.5 pl-3">
+                    <CornerDownRight class="size-4 shrink-0 text-rose" />
+                    <!-- svelte-ignore a11y_autofocus -->
+                    <input bind:value={fix} autofocus placeholder={teachable(m) ? `What should it say to "${m.prompt}"?` : m.mode == "do" ? "What should it have said or done?" : "What is the right answer?"}
+                      aria-label="The right answer" class="h-9 min-w-0 flex-1 bg-transparent text-sm placeholder:text-mist focus:outline-none" />
+                    <button type="submit" class="h-9 rounded-xl bg-rose/90 px-3 text-sm font-semibold text-night-900 hover:bg-rose">Teach</button>
+                  </div>
+                  {#if judgeable(m)}
+                    <button type="button" onclick={() => { fixing = 0; judge(m, false) }} class="justify-self-start px-1 text-xs text-fog hover:text-mist">
+                      Just tell it no
+                    </button>
+                  {/if}
+                </form>
+              {:else if teachable(m)}
+                <button onclick={() => { fixing = m.id; fix = "" }}
+                  class="mt-3 flex h-9 items-center gap-1.5 rounded-full border border-peach/25 bg-peach/10 px-4 text-sm font-medium text-peach transition hover:bg-peach/20">
+                  <CornerDownRight class="size-4" />Teach it what to say
                 </button>
-                <button onclick={() => judge(m, false)}
-                  class="flex h-9 items-center gap-1.5 rounded-full border border-rose/25 bg-rose/10 px-4 text-sm font-medium text-rose transition hover:bg-rose/20">
-                  <X class="size-4" />Wrong
-                </button>
-              </div>
+              {:else}
+                <div class="mt-3 flex gap-2">
+                  <button onclick={() => judge(m, true)}
+                    class="flex h-9 items-center gap-1.5 rounded-full border border-mint/25 bg-mint/10 px-4 text-sm font-medium text-mint transition hover:bg-mint/20">
+                    <Check class="size-4" />Right
+                  </button>
+                  <button onclick={() => { fixing = m.id; fix = "" }}
+                    class="flex h-9 items-center gap-1.5 rounded-full border border-rose/25 bg-rose/10 px-4 text-sm font-medium text-rose transition hover:bg-rose/20">
+                    <X class="size-4" />Wrong
+                  </button>
+                </div>
+              {/if}
             {/if}
           </div>
         </li>
@@ -127,7 +177,7 @@
 
     {#if baby.thinking}
       <li class="flex items-center gap-3 self-start" aria-label="Thinking">
-        <Logo size={28} />
+        <Avatar profile={baby.profile} size="size-8" />
         <span class="flex gap-1">
           <i class="size-2 animate-breathe rounded-full bg-peach"></i>
           <i class="size-2 animate-breathe rounded-full bg-peach [animation-delay:0.2s]"></i>

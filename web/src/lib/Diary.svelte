@@ -15,7 +15,9 @@
   onMount(load)
 
   function describe(m) {
-    if (m.event == "born") return { icon: Baby, tint: "text-peach", text: `Was born as a ${m.level}` }
+    if (m.event == "born") {
+      return { icon: Baby, tint: "text-peach", text: m.level == "newborn" ? "Was born, knowing nothing" : `Was born with the ${m.level} starter pack` }
+    }
     if (m.event == "sleep") return { icon: Moon, tint: "text-sky", text: `Slept, and let go of ${m.forgotten || 0} unused memories` }
     if (m.event == "lesson") return { icon: GraduationCap, tint: "text-lilac", text: `Took the ${m.lesson} lesson, ${m.score} of ${m.total} right` }
     if (m.event == "feedback") {
@@ -23,6 +25,12 @@
         ? { icon: ThumbsUp, tint: "text-mint", text: "Was told it was right" }
         : { icon: ThumbsDown, tint: "text-rose", text: "Was told it was wrong" }
     }
+    if (m.event == "taught") {
+      const what = m.what == "name" ? `the word "${m.answer}" for a picture`
+        : m.what == "reply" ? `to answer "${m.prompt}" with "${m.answer}"` : `to ${m.action} on "${m.prompt}"`
+      return { icon: GraduationCap, tint: "text-peach", text: `Was taught ${what}` }
+    }
+    if (m.event == "corrected") return { icon: ThumbsDown, tint: "text-rose", text: `Was corrected, the right answer is "${m.answer}"` }
     if (m.event == "explored") return { icon: FolderOpen, tint: "text-mint", text: `Explored ${m.file}${m.said ? ` and said "${m.said}"` : ""}` }
     const heard = m.heard ? `Heard "${m.heard}"` : m.saw ? "Looked at something" : "Was quiet"
     const did = m.action ? `, then did ${m.action}` : m.said ? `, said "${m.said}"` : ""
