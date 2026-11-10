@@ -1,0 +1,152 @@
+{
+  "_feedback": {
+    "en": {"yes": "yes, {}", "no": "no, {}"},
+    "id": {"yes": "iya, {}", "no": "bukan, {}"}
+  },
+  "_levels": {
+    "newborn": {
+      "title": "Newborn",
+      "about": "Knows nothing at all. Every word it will ever know comes from you.",
+      "lessons": []
+    },
+    "toddler": {
+      "title": "Toddler",
+      "about": "Knows colors, shapes and everyday routines like hello and thank you.",
+      "lessons": ["colors", "shapes", "routines"]
+    },
+    "preschooler": {
+      "title": "Preschooler",
+      "about": "Also knows its own name, and what animals say.",
+      "lessons": ["colors", "shapes", "routines", "about_me", "animals"]
+    },
+    "kid": {
+      "title": "Kid",
+      "about": "Also knows the colors of things, opposites, counting and kinds of things.",
+      "lessons": ["colors", "shapes", "routines", "about_me", "animals", "world", "opposites", "counting", "kinds"]
+    }
+  },
+  "colors": {
+    "title": {"en": "Colors", "id": "Warna"},
+    "teaches": "color",
+    "phrases": {
+      "en": ["this is {}", "look, {}", "it is {}", "{}"],
+      "id": ["ini {}", "lihat, {}", "warnanya {}", "{}"]
+    },
+    "items": [
+      {"rgb": [220, 40, 40], "en": "red", "id": "merah"},
+      {"rgb": [40, 90, 220], "en": "blue", "id": "biru"},
+      {"rgb": [40, 170, 70], "en": "green", "id": "hijau"},
+      {"rgb": [240, 200, 40], "en": "yellow", "id": "kuning"},
+      {"rgb": [240, 130, 30], "en": "orange", "id": "oranye"},
+      {"rgb": [140, 60, 190], "en": "purple", "id": "ungu"},
+      {"rgb": [240, 120, 170], "en": "pink", "id": "pink"},
+      {"rgb": [120, 75, 40], "en": "brown", "id": "cokelat"},
+      {"rgb": [30, 30, 30], "en": "black", "id": "hitam"},
+      {"rgb": [128, 128, 128], "en": "gray", "id": "abu"}
+    ]
+  },
+  "shapes": {
+    "title": {"en": "Shapes", "id": "Bentuk"},
+    "teaches": "shape",
+    "phrases": {
+      "en": ["this is a {}", "look, a {}", "it is a {}", "{}"],
+      "id": ["ini {}", "lihat, {}", "bentuknya {}", "{}"]
+    },
+    "items": [
+      {"shape": "circle", "en": "circle", "id": "lingkaran"},
+      {"shape": "square", "en": "square", "id": "kotak"},
+      {"shape": "triangle", "en": "triangle", "id": "segitiga"},
+      {"shape": "star", "en": "star", "id": "bintang"},
+      {"shape": "heart", "en": "heart", "id": "hati"},
+      {"shape": "hexagon", "en": "hexagon", "id": "heksagon"},
+      {"shape": "oval", "en": "oval", "id": "lonjong"},
+      {"shape": "arrow", "en": "arrow", "id": "panah"}
+    ]
+  },
+  "routines": {
+    "title": {"en": "Routines", "id": "Kebiasaan"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "hello", "reply": "hi"}, "id": {"prompt": "halo", "reply": "hai"}},
+      {"en": {"prompt": "bye", "reply": "bye"}, "id": {"prompt": "dadah", "reply": "dadah"}},
+      {"en": {"prompt": "night night", "reply": "sleep tight"}, "id": {"prompt": "selamat tidur", "reply": "mimpi indah"}},
+      {"en": {"prompt": "peekaboo", "reply": "boo"}, "id": {"prompt": "cilukba", "reply": "ba"}},
+      {"en": {"prompt": "thank you", "reply": "welcome"}, "id": {"prompt": "terima kasih", "reply": "kembali"}},
+      {"en": {"prompt": "morning", "reply": "morning"}, "id": {"prompt": "pagi", "reply": "pagi"}}
+    ]
+  },
+  "about_me": {
+    "title": {"en": "About me", "id": "Tentang aku"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "what is your name", "reply": "sourdough"}, "id": {"prompt": "siapa namamu", "reply": "sourdough"}},
+      {"en": {"prompt": "how old are you", "reply": "baby"}, "id": {"prompt": "berapa umurmu", "reply": "bayi"}},
+      {"en": {"prompt": "where do you live", "reply": "computer"}, "id": {"prompt": "di mana rumahmu", "reply": "komputer"}},
+      {"en": {"prompt": "what do you eat", "reply": "flour"}, "id": {"prompt": "kamu makan apa", "reply": "tepung"}},
+      {"en": {"prompt": "what do you love", "reply": "stories"}, "id": {"prompt": "kamu suka apa", "reply": "cerita"}}
+    ]
+  },
+  "animals": {
+    "title": {"en": "Animals", "id": "Hewan"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "what does a cat say", "reply": "meow"}, "id": {"prompt": "kucing bilang apa", "reply": "meong"}},
+      {"en": {"prompt": "what does a dog say", "reply": "woof"}, "id": {"prompt": "anjing bilang apa", "reply": "guk"}},
+      {"en": {"prompt": "what does a cow say", "reply": "moo"}, "id": {"prompt": "sapi bilang apa", "reply": "mooo"}},
+      {"en": {"prompt": "what does a duck say", "reply": "quack"}, "id": {"prompt": "bebek bilang apa", "reply": "kwek"}},
+      {"en": {"prompt": "what does a sheep say", "reply": "baa"}, "id": {"prompt": "kambing bilang apa", "reply": "mbek"}},
+      {"en": {"prompt": "what does a rooster say", "reply": "cockadoodledoo"}, "id": {"prompt": "ayam bilang apa", "reply": "kukuruyuk"}}
+    ]
+  },
+  "world": {
+    "title": {"en": "The world", "id": "Dunia"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "what color is the sky", "reply": "blue"}, "id": {"prompt": "langit warnanya apa", "reply": "biru"}},
+      {"en": {"prompt": "what color is grass", "reply": "green"}, "id": {"prompt": "rumput warnanya apa", "reply": "hijau"}},
+      {"en": {"prompt": "what color is the sun", "reply": "yellow"}, "id": {"prompt": "matahari warnanya apa", "reply": "kuning"}},
+      {"en": {"prompt": "what color is a strawberry", "reply": "red"}, "id": {"prompt": "stroberi warnanya apa", "reply": "merah"}},
+      {"en": {"prompt": "what color is coal", "reply": "black"}, "id": {"prompt": "arang warnanya apa", "reply": "hitam"}},
+      {"en": {"prompt": "what color is chocolate", "reply": "brown"}, "id": {"prompt": "cokelat batang warnanya apa", "reply": "cokelat"}}
+    ]
+  },
+  "opposites": {
+    "title": {"en": "Opposites", "id": "Lawan kata"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "opposite of big", "reply": "small"}, "id": {"prompt": "lawan kata besar", "reply": "kecil"}},
+      {"en": {"prompt": "opposite of hot", "reply": "cold"}, "id": {"prompt": "lawan kata panas", "reply": "dingin"}},
+      {"en": {"prompt": "opposite of up", "reply": "down"}, "id": {"prompt": "lawan kata atas", "reply": "bawah"}},
+      {"en": {"prompt": "opposite of day", "reply": "night"}, "id": {"prompt": "lawan kata siang", "reply": "malam"}},
+      {"en": {"prompt": "opposite of happy", "reply": "sad"}, "id": {"prompt": "lawan kata senang", "reply": "sedih"}},
+      {"en": {"prompt": "opposite of fast", "reply": "slow"}, "id": {"prompt": "lawan kata cepat", "reply": "lambat"}}
+    ]
+  },
+  "counting": {
+    "title": {"en": "Counting", "id": "Berhitung"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "after one", "reply": "two"}, "id": {"prompt": "setelah satu", "reply": "dua"}},
+      {"en": {"prompt": "after two", "reply": "three"}, "id": {"prompt": "setelah dua", "reply": "tiga"}},
+      {"en": {"prompt": "after three", "reply": "four"}, "id": {"prompt": "setelah tiga", "reply": "empat"}},
+      {"en": {"prompt": "after four", "reply": "five"}, "id": {"prompt": "setelah empat", "reply": "lima"}},
+      {"en": {"prompt": "after five", "reply": "six"}, "id": {"prompt": "setelah lima", "reply": "enam"}},
+      {"en": {"prompt": "after six", "reply": "seven"}, "id": {"prompt": "setelah enam", "reply": "tujuh"}},
+      {"en": {"prompt": "after seven", "reply": "eight"}, "id": {"prompt": "setelah tujuh", "reply": "delapan"}},
+      {"en": {"prompt": "after eight", "reply": "nine"}, "id": {"prompt": "setelah delapan", "reply": "sembilan"}},
+      {"en": {"prompt": "after nine", "reply": "ten"}, "id": {"prompt": "setelah sembilan", "reply": "sepuluh"}}
+    ]
+  },
+  "kinds": {
+    "title": {"en": "Kinds of things", "id": "Jenis benda"},
+    "teaches": "reply",
+    "items": [
+      {"en": {"prompt": "an apple is a", "reply": "fruit"}, "id": {"prompt": "apel itu apa", "reply": "buah"}},
+      {"en": {"prompt": "a carrot is a", "reply": "vegetable"}, "id": {"prompt": "wortel itu apa", "reply": "sayur"}},
+      {"en": {"prompt": "a rose is a", "reply": "flower"}, "id": {"prompt": "mawar itu apa", "reply": "bunga"}},
+      {"en": {"prompt": "a lion is an", "reply": "animal"}, "id": {"prompt": "singa itu apa", "reply": "hewan"}},
+      {"en": {"prompt": "a bus is a", "reply": "vehicle"}, "id": {"prompt": "bus itu apa", "reply": "kendaraan"}},
+      {"en": {"prompt": "a guitar is an", "reply": "instrument"}, "id": {"prompt": "gitar itu apa", "reply": "alat musik"}}
+    ]
+  }
+}
