@@ -41,6 +41,7 @@ from .senses import encode_audio, encode_word, see, tokenize
 
 CONFIDENCE = 0.4   # how sure it must be before it says or does something on purpose
 CHAIN = 0.6        # how sure it must be of the next word to continue a phrase
+TAUGHT = 0.5       # how strong one clear demonstration is: enough to act on, even when upset
 QUIET = 0.1        # attention given to function words, praise and questions
 NOVEL_USAGE = 3    # something seen this few times still feels new
 SAVE_FORMAT = 4
@@ -188,25 +189,28 @@ class Brain:
             return Response(feeling=self.feelings.strongest())
 
         self.feelings.boredom = 0.3
+        # What a bored, curious baby does: go and find something new, check a
+        # word it is unsure of, try out its body, or babble for attention.
+        whim = lambda: self.rng.uniform(0.0, 0.4)
         options = [Option("babble", IDLE + 0.5, words=[self.voice.babble(self.rng)],
                           expression="*babbles for attention*")]
         known = self._known_words()
         known = [k for k in known if self._fits_language(k[0])] or known
         if known:
-            # Practice a word, more often one it is unsure of.
             weights = np.array([1.1 - k[2] for k in known])
             word, meaning, sureness = known[self.rng.choice(len(known), p=weights / weights.sum())]
-            options.append(Option("practice", NEEDS + 1.0 - sureness,
+            options.append(Option("practice", NEEDS - 0.3 + 0.6 * (1.0 - sureness) + whim(),
                                   words=[self.words.label(word), "?"],
-                                  credit=[(meaning, word)], expression="*tries a word*"))
-        if self.actions:
-            # Prefer the action that turned out most interesting here before.
-            value = {a: sum(self.policy.w.get(c, {}).get(concept(a), 0.0) for c in self.active)
-                     for a in self.actions}
-            action = max(self.actions, key=lambda a: value[a] + self.rng.uniform(0, 0.3))
-            options.append(Option("do", TRIES + self.feelings.curiosity, action=action,
-                                  credit=[(c, concept(action)) for c in self.active or ["self"]],
-                                  expression="*tries something*"))
+                                  credit=[(meaning, word)], expression="*checks a word*"))
+        for action in self.actions:
+            target = concept(action)
+            habit = sum(self.policy.w.get(c, {}).get(target, 0.0) for c in self.active)
+            curiosity = self.feelings.curiosity
+            eager = 0.4 + 0.4 * curiosity if action == "explore" else 0.5 * curiosity
+            options.append(Option("do", NEEDS - 0.6 + eager + habit + whim(), action=action,
+                                  credit=[(c, target) for c in self.active or ["self"]],
+                                  expression="*goes to look for something new*" if action == "explore"
+                                  else "*tries something*"))
         response = self._carry_out(choose(options, self.feelings.curiosity, self.rng))
         response.initiative = True
         return response
@@ -220,7 +224,7 @@ class Brain:
             self.actions.append(action)
         target = concept(action)
         for c in self.active:
-            self.policy.nudge(c, target, 0.4)
+            self.policy.nudge(c, target, TAUGHT)
         self._credit = [(c, target) for c in self.active]
         return Response(mode="do", action=action, expression="*copies you*",
                         feeling=self.feelings.strongest())
@@ -246,7 +250,7 @@ class Brain:
         prompts = [c for c in self.active if kind(c) == "word"
                    and self.foundation.role(self.words.label(c)) == CONTENT] or self.active
         for c in prompts:
-            self.policy.nudge(c, first, 0.4)
+            self.policy.nudge(c, first, TAUGHT)
         self._credit = [(c, first) for c in prompts]
         return Response(words=words, mode="imitate", expression="*copies you*",
                         feeling=self.feelings.strongest())

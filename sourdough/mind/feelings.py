@@ -19,7 +19,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 TIRED_AFTER = 200   # experiences between sleeps
-BORED_AFTER = 45.0  # seconds of nothing new before it acts by itself
+BORED_AFTER = 30.0  # seconds of nothing new before it acts by itself
 
 
 @dataclass
