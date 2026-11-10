@@ -1,6 +1,6 @@
 # Sourdough web app
 
-The interface for raising a Sourdough baby: its mind on the left, a conversation on the right. Svelte 5 and Vite, nothing else.
+The interface for raising a Sourdough baby: its mind on the left, a conversation on the right. Svelte 5, Vite, Tailwind CSS v4 and Lucide icons.
 
 ```bash
 npm install
@@ -13,4 +13,4 @@ npm run build    # writes ../sourdough/interface/static, which the Python server
 * `src/lib/Talk.svelte`, `Teach.svelte`, `Diary.svelte` are the three tabs.
 * `src/lib/Picker.svelte` chooses a baby level.
 * `public/fonts` holds Plus Jakarta Sans, self hosted (SIL Open Font License).
-* `src/app.css` holds the colors and base styles.
+* `src/app.css` holds the Tailwind theme: every color, the font and the animations.

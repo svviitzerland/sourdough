@@ -3,6 +3,7 @@
   // to what it says and does (right). Links glow as strands, tighter when stronger,
   // and pulses run along whatever it is thinking about right now.
   import { onMount, untrack } from "svelte"
+  import { Brain, X, ZoomIn, ZoomOut, Maximize2 } from "@lucide/svelte"
   import { baby } from "./baby.svelte.js"
 
   const COLUMNS = [
@@ -317,6 +318,13 @@
     drag = null
   }
 
+  function zoom(factor) {
+    const k = Math.min(4, Math.max(0.4, view.k * factor))
+    const cx = width / 2
+    const cy = height / 2
+    view = { k, x: cx - ((cx - view.x) / view.k) * k, y: cy - ((cy - view.y) / view.k) * k }
+  }
+
   function wheel(e) {
     e.preventDefault()
     const [sx, sy] = local(e)
@@ -334,78 +342,63 @@
   })
 </script>
 
-<div class="mind" bind:this={box} bind:clientWidth={width} bind:clientHeight={height}>
-  <canvas bind:this={canvas} class:pointing={!!tip} onpointerdown={down} onpointermove={move}
-    onpointerup={up} onpointerleave={() => { hover = null; tip = null }} onwheel={wheel}
-    ondblclick={() => (view = { x: 0, y: 0, k: 1 })} aria-label="Its concept network"></canvas>
+<div class="absolute inset-0 overflow-hidden" bind:this={box} bind:clientWidth={width} bind:clientHeight={height}>
+  <canvas bind:this={canvas} onpointerdown={down} onpointermove={move} onpointerup={up}
+    onpointerleave={() => { hover = null; tip = null }} onwheel={wheel} ondblclick={() => (view = { x: 0, y: 0, k: 1 })}
+    class="block size-full touch-none {tip ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing'}"
+    aria-label="Its concept network"></canvas>
 
   {#if !nodes.length}
-    <p class="empty">It knows nothing yet.<br />Talk to it and show it things, and its mind will grow here.</p>
+    <div class="pointer-events-none absolute inset-x-0 top-1/2 mt-6 grid justify-items-center gap-1 text-center">
+      <Brain class="mb-1 size-6 text-fog" />
+      <p class="font-semibold">Its mind is still empty</p>
+      <p class="max-w-xs text-sm text-mist">Talk to it and show it things. Every word it learns grows here.</p>
+    </div>
   {/if}
 
   {#if tip}
-    <span class="tip" style:left="{tip.x}px" style:top="{tip.y}px">{tip.text}</span>
+    <span class="pointer-events-none absolute translate-x-3.5 translate-y-3.5 whitespace-nowrap rounded-lg bg-ink px-2.5 py-1.5 text-[13px] text-night-900"
+      style:left="{tip.x}px" style:top="{tip.y}px">{tip.text}</span>
   {/if}
 
   {#if pinned}
-    <aside class="detail">
-      <b>{describe(pinned)}</b>
-      <span>{pinned.kind}, {(pinned.links || []).length} links</span>
+    <aside class="glass animate-arrive absolute right-4 top-4 grid w-64 gap-1 rounded-2xl p-4 text-sm text-mist">
+      <div class="flex items-start justify-between gap-2">
+        <b class="text-xl font-bold text-ink">{describe(pinned)}</b>
+        <button onclick={() => (pinned = null)} class="grid size-7 place-items-center rounded-full hover:bg-night-700" title="Close">
+          <X class="size-4" />
+        </button>
+      </div>
+      <span class="text-xs text-fog">{pinned.kind}, {(pinned.links || []).length} links</span>
       {#if details.length}
-        <ol>
-          {#each details as d}<li>{d.name}{d.habit ? ", habit" : ""} <em>{d.weight.toFixed(2)}</em></li>{/each}
+        <ol class="mt-2 grid gap-1.5">
+          {#each details as d}
+            <li class="flex items-center justify-between gap-2">
+              <span class="truncate">{d.name}{d.habit ? ", habit" : ""}</span>
+              <span class="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-night-600">
+                <span class="block h-full rounded-full bg-peach" style:width="{Math.round(d.weight * 100)}%"></span>
+              </span>
+            </li>
+          {/each}
         </ol>
       {/if}
     </aside>
   {/if}
 
-  <p class="hint">Drag to move, scroll to zoom, click a concept</p>
+  {#if nodes.length}
+    <div class="pointer-events-none absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+      <div class="glass pointer-events-auto flex items-center gap-1 rounded-xl p-1">
+        <button onclick={() => zoom(1.25)} title="Zoom in" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><ZoomIn class="size-4" /></button>
+        <button onclick={() => zoom(0.8)} title="Zoom out" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><ZoomOut class="size-4" /></button>
+        <button onclick={() => (view = { x: 0, y: 0, k: 1 })} title="Fit" class="grid size-8 place-items-center rounded-lg text-mist hover:bg-night-700 hover:text-ink"><Maximize2 class="size-4" /></button>
+        <span class="hidden px-2 text-xs text-fog xl:inline">Drag to move, click a concept</span>
+      </div>
+      <div class="glass hidden flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2 text-xs text-mist lg:flex">
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-sky"></i>names</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-lilac"></i>hears</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-peach"></i>says</span>
+        <span class="flex items-center gap-1.5"><i class="size-2 rounded-full bg-mint"></i>actions</span>
+      </div>
+    </div>
+  {/if}
 </div>
-
-<style>
-  .mind { position: absolute; inset: 0; overflow: hidden; }
-  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
-  canvas:active { cursor: grabbing; }
-  canvas.pointing { cursor: pointer; }
-  .empty {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    margin-top: 10px;
-    text-align: center;
-    color: var(--muted);
-    pointer-events: none;
-  }
-  .tip {
-    position: absolute;
-    transform: translate(14px, 14px);
-    background: var(--text);
-    color: var(--bg);
-    font-size: 13px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-  .detail {
-    position: absolute;
-    right: 16px;
-    top: 16px;
-    width: 260px;
-    background: rgba(15, 19, 32, 0.92);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 14px 16px;
-    color: var(--muted);
-    font-size: 13px;
-    display: grid;
-    gap: 4px;
-  }
-  .detail b { font-size: 20px; color: var(--text); font-weight: 700; }
-  .detail ol { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 2px; }
-  .detail li::marker { color: var(--accent); }
-  .detail em { font-style: normal; color: var(--faint); }
-  .hint { position: absolute; left: 18px; bottom: 14px; font-size: 12px; color: var(--faint); pointer-events: none; }
-</style>

@@ -1,7 +1,10 @@
 <script>
   import { onMount } from "svelte"
+  import {
+    MessageCircle, GraduationCap, BookOpen, Volume2, VolumeX, ChevronDown,
+    Smile, Frown, Sparkles, Meh, CircleHelp, Moon, Circle,
+  } from "@lucide/svelte"
   import { baby, boot, toggleVoice } from "./lib/baby.svelte.js"
-  import Icon from "./lib/Icon.svelte"
   import Logo from "./lib/Logo.svelte"
   import Mind from "./lib/Mind.svelte"
   import Talk from "./lib/Talk.svelte"
@@ -9,10 +12,25 @@
   import Diary from "./lib/Diary.svelte"
   import Picker from "./lib/Picker.svelte"
 
-  const tabs = [["talk", "Talk"], ["teach", "Teach"], ["diary", "Diary"]]
+  const tabs = [
+    { id: "talk", label: "Talk", icon: MessageCircle },
+    { id: "teach", label: "Teach", icon: GraduationCap },
+    { id: "diary", label: "Diary", icon: BookOpen },
+  ]
+  const moods = {
+    happy: { icon: Smile, color: "text-mint" },
+    upset: { icon: Frown, color: "text-rose" },
+    curious: { icon: Sparkles, color: "text-peach" },
+    bored: { icon: Meh, color: "text-mist" },
+    confused: { icon: CircleHelp, color: "text-lilac" },
+    sleepy: { icon: Moon, color: "text-sky" },
+    calm: { icon: Circle, color: "text-mist" },
+  }
+
   let tab = $state("talk")
   let picking = $state(false)
   let failed = $state("")
+  const mood = $derived(moods[baby.state?.feeling] || moods.calm)
 
   onMount(async () => {
     try {
@@ -33,37 +51,56 @@
   }
 </script>
 
-<div class="app">
-  <header>
-    <div class="brand"><Logo /><b>Sourdough</b></div>
+<div class="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(60%_50%_at_30%_40%,rgba(98,112,255,0.10),transparent_70%),radial-gradient(40%_40%_at_85%_10%,rgba(255,150,120,0.08),transparent_70%)]"></div>
+
+<div class="grid h-full grid-rows-[auto_minmax(0,1fr)]">
+  <header class="flex items-center gap-3 px-4 py-3 md:px-5">
+    <div class="flex items-center gap-2.5">
+      <Logo />
+      <span class="hidden text-[17px] font-bold tracking-tight sm:inline">Sourdough</span>
+    </div>
+
     {#if baby.state}
-      <button class="who plain" onclick={() => (picking = true)} title="Switch baby">
-        <span class="avatar">{baby.name.slice(0, 1).toUpperCase()}</span>
-        <span class="name">{baby.name}</span>
-        <span class="meta">{baby.state.stage} · {baby.state.vocabulary.length} words · feels {baby.state.feeling}</span>
-        <Icon name="chevron" />
+      <button onclick={() => (picking = true)} title="Switch baby"
+        class="group ml-2 flex h-11 items-center gap-2.5 rounded-full border border-white/[0.06] bg-night-800/70 py-1 pl-1 pr-3 transition hover:bg-night-700">
+        <span class="grid size-9 place-items-center rounded-full bg-gradient-to-br from-peach to-rose text-sm font-bold text-night-900">
+          {baby.name.slice(0, 1).toUpperCase()}
+        </span>
+        <span class="font-semibold">{baby.name}</span>
+        <span class="hidden rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-mist md:inline">{baby.state.stage}</span>
+        <span class="hidden text-sm text-mist md:inline">{baby.state.vocabulary.length} words</span>
+        <span class="flex items-center gap-1 text-sm {mood.color}" title="It feels {baby.state.feeling}">
+          <mood.icon class="size-4" />
+          <span class="hidden lg:inline">{baby.state.feeling}</span>
+        </span>
+        <ChevronDown class="size-4 text-fog transition group-hover:text-ink" />
       </button>
     {/if}
-    <span class="spacer"></span>
-    <button class="plain round" onclick={toggleVoice} aria-pressed={baby.voice}
-      title={baby.voice ? "It speaks out loud" : "It is silent"}>
-      <Icon name={baby.voice ? "voice" : "mute"} />
+
+    <span class="flex-1"></span>
+
+    <button onclick={toggleVoice} aria-pressed={baby.voice} title={baby.voice ? "It speaks out loud" : "It is silent"}
+      class="grid size-10 place-items-center rounded-full text-mist transition hover:bg-night-800 hover:text-ink">
+      {#if baby.voice}<Volume2 class="size-5" />{:else}<VolumeX class="size-5" />{/if}
     </button>
   </header>
 
-  <main>
-    <section class="mind" aria-label="Its mind">
+  <main class="grid min-h-0 grid-rows-[38vh_minmax(0,1fr)] gap-2 px-2 pb-2 md:grid-cols-[minmax(0,1fr)_minmax(370px,440px)] md:grid-rows-1 md:gap-3 md:px-3 md:pb-3">
+    <section class="relative min-h-0 overflow-hidden rounded-3xl border border-white/[0.06] bg-[radial-gradient(60%_70%_at_45%_50%,rgba(98,112,255,0.14),transparent_70%),radial-gradient(40%_50%_at_80%_30%,rgba(255,140,120,0.07),transparent_70%)] bg-night-850" aria-label="Its mind">
       <Mind />
     </section>
 
-    <section class="panel">
-      <nav aria-label="What to do">
-        {#each tabs as [id, label]}
-          <button class:active={tab == id} onclick={() => (tab = id)} aria-current={tab == id}>{label}</button>
+    <section class="glass grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-3xl">
+      <nav class="m-3 grid grid-cols-3 gap-1 rounded-2xl bg-night-950/70 p-1" aria-label="What to do">
+        {#each tabs as t}
+          <button onclick={() => (tab = t.id)} aria-current={tab == t.id}
+            class="flex h-10 items-center justify-center gap-2 rounded-xl text-sm font-medium transition {tab == t.id ? 'bg-night-700 text-ink shadow-sm' : 'text-mist hover:text-ink'}">
+            <t.icon class="size-4" />{t.label}
+          </button>
         {/each}
       </nav>
       {#if failed}
-        <p class="failed">Cannot reach its brain. Start it with <code>sourdough</code> and reload. ({failed})</p>
+        <p class="p-6 text-mist">Cannot reach its brain. Start it with <code class="text-peach">sourdough</code> and reload. ({failed})</p>
       {:else if tab == "talk"}
         <Talk />
       {:else if tab == "teach"}
@@ -78,69 +115,3 @@
     <Picker onclose={picked} />
   {/if}
 </div>
-
-<style>
-  .app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
-
-  header { display: flex; align-items: center; gap: 14px; padding: 12px 18px; }
-  .brand { display: flex; align-items: center; gap: 10px; }
-  .brand b { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
-  .who { height: 44px; padding: 0 12px 0 6px; gap: 10px; border-radius: 22px; color: var(--muted); font-weight: 400; }
-  .avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: linear-gradient(135deg, var(--accent), var(--rose));
-    color: var(--accent-ink);
-    font-weight: 700;
-    font-size: 14px;
-  }
-  .name { color: var(--text); font-weight: 600; }
-  .meta { font-size: 13px; }
-  .spacer { flex: 1; }
-  .round { width: 40px; padding: 0; border-radius: 50%; }
-
-  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); gap: 12px; padding: 0 12px 12px; min-height: 0; }
-  .mind {
-    position: relative;
-    min-height: 0;
-    border-radius: 22px;
-    overflow: hidden;
-    background:
-      radial-gradient(60% 70% at 45% 50%, rgba(98, 112, 255, 0.14), transparent 70%),
-      radial-gradient(40% 50% at 80% 30%, rgba(255, 140, 120, 0.08), transparent 70%),
-      #0c1020;
-    border: 1px solid var(--line);
-  }
-  .panel {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    min-height: 0;
-    min-width: 0;
-    overflow: hidden;
-  }
-  nav {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    margin: 12px;
-    padding: 4px;
-    background: var(--bg);
-    border-radius: 14px;
-  }
-  nav button { height: 36px; border: 0; background: transparent; color: var(--muted); border-radius: 10px; }
-  nav button:hover:not(:disabled) { background: transparent; color: var(--text); }
-  nav button.active { background: var(--card-hi); color: var(--text); }
-  .failed { padding: 24px; color: var(--muted); }
-
-  @media (max-width: 900px) {
-    header { padding: 10px 12px; }
-    .brand b, .meta { display: none; }
-    main { grid-template-columns: 1fr; grid-template-rows: 36vh minmax(0, 1fr); padding: 0 8px 8px; gap: 8px; }
-  }
-</style>

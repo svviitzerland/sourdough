@@ -1,7 +1,19 @@
 <script>
   import { tick } from "svelte"
+  import {
+    Palette, Shapes, Hand, User, PawPrint, Globe, ArrowLeftRight, Hash, Boxes, BookOpen,
+    FolderSearch, Eye, Zap, Check, X, LoaderCircle,
+  } from "@lucide/svelte"
   import { baby, lesson, showAction } from "./baby.svelte.js"
-  import Icon from "./Icon.svelte"
+
+  const icons = {
+    colors: Palette, shapes: Shapes, routines: Hand, about_me: User, animals: PawPrint,
+    world: Globe, opposites: ArrowLeftRight, counting: Hash, kinds: Boxes,
+  }
+  const actions = {
+    explore: { icon: FolderSearch, about: "Opens a picture or text from its own folder" },
+    glance: { icon: Eye, about: "Looks through the camera when it is on" },
+  }
 
   let report = $state(null)
   let running = $state("")
@@ -20,93 +32,80 @@
   }
 </script>
 
-<div class="teach">
-  <section>
-    <div class="head">
-      <h2>Lessons</h2>
-      <div class="lang" role="group" aria-label="Lesson language">
-        <button class:active={language == "en"} onclick={() => (language = "en")}>English</button>
-        <button class:active={language == "id"} onclick={() => (language = "id")}>Indonesia</button>
+<div class="grid content-start gap-7 overflow-y-auto px-5 pb-6 pt-1">
+  <section class="grid gap-3">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-lg font-bold">Lessons</h2>
+      <div class="flex gap-0.5 rounded-xl bg-night-950/70 p-1" role="group" aria-label="Lesson language">
+        {#each [["en", "English"], ["id", "Indonesia"]] as [code, name]}
+          <button onclick={() => (language = code)}
+            class="h-7 rounded-lg px-3 text-[13px] font-medium transition {language == code ? 'bg-night-700 text-ink' : 'text-mist hover:text-ink'}">
+            {name}
+          </button>
+        {/each}
       </div>
     </div>
-    <p>A lesson shows it things and names them for you, then quizzes it. It learns exactly as if you had done it yourself.</p>
-    <div class="grid">
+    <p class="text-sm text-mist">A lesson shows it things and names them for you, then quizzes it. It learns exactly as if you had done it yourself.</p>
+    <div class="grid grid-cols-2 gap-2">
       {#each baby.lessons as l}
-        <button class="lesson" disabled={!!running} onclick={() => run(l.name)}>
-          <b>{l.title[language] || l.title.en}</b>
-          <span>{running == l.name ? "Teaching..." : `${l.size} things`}</span>
+        {@const Icon = icons[l.name] || BookOpen}
+        <button disabled={!!running} onclick={() => run(l.name)}
+          class="group flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-night-800 p-3 text-left transition hover:border-peach/30 hover:bg-night-700">
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-night-950/60 text-peach">
+            {#if running == l.name}<LoaderCircle class="size-[18px] animate-spin" />{:else}<Icon class="size-[18px]" />{/if}
+          </span>
+          <span class="min-w-0">
+            <b class="block truncate text-sm font-semibold">{l.title[language] || l.title.en}</b>
+            <span class="text-xs text-fog">{running == l.name ? "Teaching..." : `${l.size} things`}</span>
+          </span>
         </button>
       {/each}
     </div>
   </section>
 
   {#if report}
-    <section class="report" bind:this={shown}>
-      <h3>{report.lesson}<span>{report.score} of {report.total} right</span></h3>
-      <div class="cards">
+    <section bind:this={shown} class="animate-arrive grid gap-3">
+      <div class="flex items-baseline justify-between">
+        <h3 class="text-lg font-bold">{report.lesson}</h3>
+        <span class="text-sm font-semibold {report.score == report.total ? 'text-mint' : 'text-peach'}">{report.score} of {report.total} right</span>
+      </div>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-2">
         {#each report.results as r}
-          <div class="card" class:miss={!r.correct}>
-            {#if r.picture}<img src={r.picture} alt="" />{:else}<span class="prompt">"{r.prompt}"</span>{/if}
-            <b>{r.word}</b>
-            <small><Icon name={r.correct ? "check" : "cross"} />{r.said || "no answer"}</small>
+          <div class="grid gap-1 rounded-2xl border bg-night-800 p-1.5 pb-2 {r.correct ? 'border-transparent' : 'border-rose/40'}">
+            {#if r.picture}
+              <img src={r.picture} alt="" class="aspect-square w-full rounded-xl" />
+            {:else}
+              <span class="grid aspect-square place-items-center rounded-xl bg-night-950/60 p-2 text-center text-xs text-mist">"{r.prompt}"</span>
+            {/if}
+            <b class="px-1 text-sm font-semibold">{r.word}</b>
+            <span class="flex items-center gap-1 px-1 text-xs text-fog">
+              {#if r.correct}<Check class="size-3 shrink-0 text-mint" />{:else}<X class="size-3 shrink-0 text-rose" />{/if}
+              <span class="truncate">{r.said || "no answer"}</span>
+            </span>
           </div>
         {/each}
       </div>
     </section>
   {/if}
 
-  <section>
-    <h2>Actions</h2>
-    <p>Its body can do a few things, but it does not know what they are for. It tries them when it gets bored, and keeps doing whatever brings something new. Say a word first, then show it here to teach it.</p>
-    <div class="actions">
+  <section class="grid gap-3">
+    <h2 class="text-lg font-bold">Actions</h2>
+    <p class="text-sm text-mist">Its body can do a few things, but it does not know what they are for. It tries them when bored and keeps doing whatever brings something new. Say a word, then show it here to teach it.</p>
+    <div class="grid gap-2">
       {#each baby.state?.actions || [] as a}
-        <button onclick={() => showAction(a.action)}>
-          <b>{a.action}</b>
-          <span>{a.action == "explore" ? "opens a file from its own folder" : a.action == "glance" ? "looks through the camera" : "an action"}</span>
-          {#if a.triggers.length}<i>when it hears {a.triggers.join(", ")}</i>{/if}
+        {@const info = actions[a.action] || { icon: Zap, about: "An action its body can do" }}
+        <button onclick={() => showAction(a.action)}
+          class="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-night-800 p-3 text-left transition hover:border-mint/30 hover:bg-night-700">
+          <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-mint/10 text-mint"><info.icon class="size-[18px]" /></span>
+          <span class="min-w-0 flex-1">
+            <b class="block text-sm font-semibold capitalize">{a.action}</b>
+            <span class="text-xs text-fog">{info.about}</span>
+          </span>
+          {#if a.triggers.length}
+            <span class="rounded-full bg-mint/10 px-2 py-0.5 text-xs text-mint">on "{a.triggers.join(", ")}"</span>
+          {/if}
         </button>
       {/each}
     </div>
   </section>
 </div>
-
-<style>
-  .teach { overflow-y: auto; padding: 4px 18px 20px; display: grid; gap: 28px; align-content: start; }
-  section { display: grid; gap: 12px; }
-  .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  h2 { font-size: 18px; font-weight: 700; }
-  p { color: var(--muted); font-size: 14px; }
-
-  .lang { display: flex; gap: 2px; padding: 3px; background: var(--bg); border-radius: 12px; }
-  .lang button { height: 30px; padding: 0 10px; border: 0; background: transparent; color: var(--muted); font-size: 13px; border-radius: 9px; }
-  .lang button.active { background: var(--card-hi); color: var(--text); }
-
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .lesson, .actions button {
-    height: auto;
-    padding: 14px;
-    display: grid;
-    justify-items: start;
-    justify-content: stretch;
-    gap: 2px;
-    text-align: left;
-    border-radius: 16px;
-  }
-  .lesson b, .actions b { font-size: 15px; font-weight: 600; }
-  .lesson span, .actions span { color: var(--faint); font-size: 13px; font-weight: 400; }
-  .actions { display: grid; gap: 8px; }
-  .actions i { font-style: normal; color: var(--mint); font-size: 13px; font-weight: 400; }
-
-  h3 { font-size: 18px; font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
-  h3 span { color: var(--mint); font-size: 14px; font-weight: 600; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px; }
-  .card { background: var(--card); border-radius: 14px; padding: 6px 6px 8px; display: grid; gap: 4px; border: 1px solid transparent; }
-  .card.miss { border-color: rgba(255, 143, 156, 0.45); }
-  .card img, .prompt { width: 100%; aspect-ratio: 1; border-radius: 10px; }
-  .prompt { display: grid; place-items: center; text-align: center; font-size: 13px; color: var(--muted); background: var(--bg); padding: 6px; }
-  .card b { font-size: 14px; font-weight: 600; padding: 0 2px; }
-  .card small { display: flex; gap: 4px; align-items: center; color: var(--faint); font-size: 12px; padding: 0 2px; }
-  .card small :global(svg) { width: 13px; height: 13px; }
-  .card:not(.miss) small :global(svg) { color: var(--mint); }
-  .card.miss small :global(svg) { color: var(--rose); }
-</style>

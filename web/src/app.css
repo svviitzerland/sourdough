@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 @font-face {
   font-family: "Plus Jakarta Sans";
   src: url("/fonts/plus-jakarta-sans.woff2") format("woff2");
@@ -5,73 +7,58 @@
   font-display: swap;
 }
 
-:root {
-  --bg: #0a0d16;
-  --panel: #0f1320;
-  --card: #161b2a;
-  --card-hi: #1e2437;
-  --line: rgba(255, 255, 255, 0.07);
-  --text: #eef1f8;
-  --muted: #a3abc0;
-  --faint: #6f7891;
-  --accent: #ffb38a;
-  --accent-ink: #24130a;
-  --blue: #8ab4ff;
-  --lilac: #c4a1ff;
-  --mint: #7ee0b5;
-  --rose: #ff8f9c;
-  --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  color-scheme: dark;
+/* Every color and the font live here, as Tailwind theme tokens. */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-night-950: #070910;
+  --color-night-900: #0a0d16;
+  --color-night-850: #0d111c;
+  --color-night-800: #121725;
+  --color-night-700: #1a2032;
+  --color-night-600: #252c42;
+  --color-ink: #eef1f8;
+  --color-mist: #a3abc0;
+  --color-fog: #6f7891;
+  --color-peach: #ffb38a;
+  --color-peach-deep: #f08a63;
+  --color-sky: #8ab4ff;
+  --color-lilac: #c4a1ff;
+  --color-mint: #7ee0b5;
+  --color-rose: #ff8f9c;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-arrive: arrive 0.45s var(--ease-soft);
+  --animate-fade: fade 0.35s var(--ease-soft);
+  --animate-breathe: breathe 1.4s ease-in-out infinite;
+
+  @keyframes arrive {
+    from { opacity: 0; transform: translateY(8px); }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+  }
+  @keyframes breathe {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1); }
+  }
 }
 
-* { box-sizing: border-box; }
-html, body, #app { height: 100%; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 15px/1.5 var(--font);
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  html, body, #app { height: 100%; }
+  body {
+    @apply bg-night-900 text-ink font-sans antialiased;
+    font-size: 15px;
+  }
+  ::selection { @apply bg-peach text-night-900; }
+  * { scrollbar-width: thin; scrollbar-color: var(--color-night-600) transparent; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-peach; }
+  button { @apply cursor-pointer disabled:cursor-default disabled:opacity-45; }
 }
-::selection { background: var(--accent); color: var(--accent-ink); }
-* { scrollbar-width: thin; scrollbar-color: var(--card-hi) transparent; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-h1, h2, h3, p { margin: 0; }
 
-button {
-  font: 500 14px/1 var(--font);
-  color: var(--text);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  height: 40px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
+@utility glass {
+  @apply bg-night-850/80 border border-white/[0.06] backdrop-blur-xl;
 }
-button:hover:not(:disabled) { background: var(--card-hi); }
-button:active:not(:disabled) { transform: scale(0.98); }
-button:disabled { opacity: 0.45; cursor: default; }
-button svg { width: 18px; height: 18px; flex: none; }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
-button.primary:hover:not(:disabled) { background: #ffc4a3; }
-button.plain { background: transparent; border-color: transparent; }
-button.plain:hover:not(:disabled) { background: var(--card); }
-
-input[type="text"] {
-  font: 15px var(--font);
-  color: var(--text);
-  background: transparent;
-  border: 0;
-  min-width: 0;
-}
-input[type="text"]::placeholder { color: var(--faint); }
-input[type="text"]:focus { outline: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

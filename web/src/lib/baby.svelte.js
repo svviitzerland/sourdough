@@ -16,6 +16,7 @@ export const baby = $state({
   messages: [],
   view: null,          // what is in front of its eyes: { kind, src, note }
   busy: false,
+  thinking: false,     // waiting for an answer to something you said or showed
   voice: true,
   lang: "en",
   thinkingAt: 0,
@@ -106,6 +107,7 @@ export async function observe({ text = "", passive = false, outcome_of = null } 
   if (!text && !image) return
   if (!passive && !outcome_of) push({ from: "you", text, image })
   baby.busy = true
+  baby.thinking = !passive
   try {
     const data = await api("/api/observe", { text, image, passive, outcome_of })
     apply(data.state)
@@ -116,6 +118,7 @@ export async function observe({ text = "", passive = false, outcome_of = null } 
     note(`Could not reach its brain. ${e.message}`)
   } finally {
     baby.busy = false
+    baby.thinking = false
   }
 }
 
