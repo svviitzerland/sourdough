@@ -58,6 +58,7 @@ class Response:
     action: str | None = None  # an action for the host to carry out
     feeling: str = "calm"
     initiative: bool = False   # True when it acted without being prompted
+    surprise: float = 0.0      # how new the moment was, for the face
 
     def __str__(self) -> str:
         parts = [self.expression, " ".join(self.words)]
@@ -86,6 +87,7 @@ class Brain:
         self.feelings = Feelings()
         self.actions: list[str] = list(actions)
         self.age = 0
+        self.smile = 0.15   # how readily its face shows joy, learned from warm responses
         self.language: str | None = None             # the language it is being spoken to in
         self.languages: dict[str, dict[str, int]] = {}  # word concept: language it was heard in
 
@@ -163,6 +165,7 @@ class Brain:
         asked = self.foundation.is_question(words)
         options = self._options(concepts, content, seen, surprise, passive, asked, feedback)
         response = self._carry_out(choose(options, self.feelings.curiosity, self.rng))
+        response.surprise = round(surprise, 2)
 
         for w in words:
             self.voice.listen(w)
@@ -262,6 +265,9 @@ class Brain:
         Words in ``spare`` are left alone, because the caregiver repeated them.
         """
         self.feelings.praised(amount)
+        if amount > 0 and self.feelings.joy > 0:
+            # The social smile: smiling that is answered warmly becomes easier.
+            self.smile = min(1.0, self.smile + 0.04 * (1.0 - self.smile))
         for source, target in self._credit:
             if target not in spare:
                 self.policy.nudge(source, target, 0.3 * amount)
@@ -539,7 +545,18 @@ class Brain:
             "links": len(self.assoc) + len(self.sequence) + len(self.policy),
             "vocabulary": self.vocabulary(),
             "actions": self.habits(),
+            "face": self.face(),
         }
+
+    def face(self) -> dict:
+        """What its face can do, which grows with it.
+
+        A newborn's face has little control: small, imprecise expressions.
+        Range and control come with experience, the way infant faces mature.
+        The smile is learned separately, from people answering it.
+        """
+        maturity = 0.2 + self.age / 900 + len(self._known_words()) / 120
+        return {"maturity": round(min(1.0, maturity), 3), "smile": round(self.smile, 3)}
 
     def graph(self, limit: int = 400) -> dict:
         """Its concept network: the strongest links, for drawing."""
@@ -595,6 +612,7 @@ class Brain:
             "actions": self.actions,
             "language": self.language,
             "languages": self.languages,
+            "smile": self.smile,
             "words": self.words.to_dict(),
             "colors": self.colors.to_dict(),
             "shapes": self.shapes.to_dict(),
@@ -614,6 +632,7 @@ class Brain:
         b.feelings = Feelings.from_dict(d["feelings"])
         b.language = d.get("language")
         b.languages = d.get("languages", {})
+        b.smile = d.get("smile", 0.15)
         b.words = Cortex.from_dict(d["words"])
         b.colors = Cortex.from_dict(d["colors"])
         b.shapes = Cortex.from_dict(d["shapes"])

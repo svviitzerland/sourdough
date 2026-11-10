@@ -141,3 +141,15 @@ def test_one_correction_is_enough_even_when_upset():
     baby.reward(-1.0)
     baby.model("hi")
     assert baby.observe(text="hello").words == ["hi"]
+
+
+def test_its_face_matures_and_its_smile_is_learned():
+    baby = Brain(seed=0)
+    newborn = baby.face()
+    for _ in range(5):
+        baby.observe(text="good")
+    assert baby.face()["smile"] > newborn["smile"]
+    rng = np.random.default_rng(0)
+    for word, color in (("red", RED), ("blue", (40, 90, 220))):
+        baby.observe(text=word, image=draw("circle", color, rng))
+    assert baby.face()["maturity"] > newborn["maturity"]
