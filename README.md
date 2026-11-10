@@ -44,18 +44,26 @@ sourdough new kiki                          # create a newborn from the terminal
 sourdough new bima --level kid --about "a clever kid who loves animals"
 sourdough list                              # every baby and how far along it is
 sourdough --name kiki                       # open the web app with kiki
+sourdough feed kiki --pairs facts.json      # teach it answers from a JSON or CSV file
+sourdough feed kiki --folder ./pictures     # teach it words from pictures named after them
+sourdough feed kiki --ai openrouter --topic "animals"   # let another AI teach it
 ```
 
 ## Using it
 
-The left side is the baby's mind: every concept it has formed and every link between them, lighting up as it thinks. The right side has three tabs.
+The app looks and feels like a Mac app, in light or dark mode, following your system. Your babies are listed on the left. The middle is a conversation with the open baby, under its face. The right side has four tabs: **Mind**, **Teach**, **Feed** and **Diary**.
 
-**Talk** is a conversation.
+**Its face** shows what it feels, with no words. Expressions are not scripted. They come from its feelings, through the muscles of a face (see [how it learns](docs/how-it-learns.md#10-its-face)). It smiles when praised, frowns when corrected, tilts its head when puzzled, looks around when it explores, moves its mouth when it talks, and closes its eyes when it sleeps. A newborn's face is soft and imprecise. It gains control as the baby grows, and its smile grows warmer the more people answer it.
+
+**The conversation** works like Messages.
 
 * Say something, or show it a picture or the camera and say what it is.
 * After it answers, press **Right**, or **Wrong** and type the right answer. That one step corrects it and teaches it.
 * When it babbles at something you said, press **Teach it what to say**.
 * When it asks **?** about a picture, type what it is right under its question.
+* The **+** button shows it a picture or turns on the camera.
+
+**Mind** is every concept it has formed and every link between them, lighting up as it thinks.
 
 **Teach** has three simple forms, plus ready made lessons:
 
@@ -63,9 +71,17 @@ The left side is the baby's mind: every concept it has formed and every link bet
 * **An answer**: when I say ___, it answers ___.
 * **An action**: when I say ___, it does ___.
 
+**Feed** brings in things to learn from outside, when you want it to know something specific:
+
+* **AI teacher**: another AI (OpenAI, OpenRouter, a local Ollama, or any OpenAI compatible API) writes short questions and answers about a topic. Set `OPENAI_API_KEY` or `OPENROUTER_API_KEY`, or type a key in the app. A typed key stays in memory while Sourdough runs and is never saved to disk.
+* **Pictures**: each picture teaches the word in its file name, so `apple.jpg` teaches "apple".
+* **File**: a JSON list of `{"prompt": ..., "answer": ...}`, or a CSV with two columns.
+
+Feeding is still learning by experience. The baby hears each question followed by its answer, or sees each picture while its word is said, twice, then gets a quiz. Nothing is copied into it.
+
 **Diary** shows its life, moment by moment, and lets you put it to sleep.
 
-Switch, create, edit or delete babies from the name at the top left. Deleted babies go to `~/.sourdough/trash`, so they can still be restored.
+Switch, create, edit or delete babies from the list on the left. Deleted babies go to `~/.sourdough/trash`, so they can still be restored.
 
 ## It is curious
 
@@ -150,6 +166,7 @@ sourdough/
   memory/          associations, sequence, policy, journal
   body/            voice, actions
   foundation/      what it knows at birth: language roles, lessons, levels
+  feeders/         adapters that turn files and other AIs into teaching moments
   storage.py       where each baby lives on disk
   interface/       web server, the web body, the built web app
 web/               the Svelte web app

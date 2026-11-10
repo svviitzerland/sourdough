@@ -75,13 +75,18 @@ npm run build                   # writes sourdough/interface/static, commit it
 
 The build is committed so `pip install` users get the app without Node. Rebuild and commit `sourdough/interface/static` whenever `web/` changes.
 
-The layout is for people who are not technical: the baby's mind fills the left (a canvas of its concept network in layers, colors, shapes, names, hears, says, actions), a panel on the right has three tabs, Talk (conversation, suggestions, say bar), Teach (lessons, actions) and Diary (its life). A picker chooses a baby level on the first visit. Keep new controls inside a tab, not in the header.
+The layout is for people who are not technical and follows a Mac app: a sidebar of babies (`Sidebar.svelte`), the conversation under the baby's animated face (`Talk.svelte`, `Face.svelte`), and an inspector with a segmented control (`Inspector.svelte`): Mind (the concept network canvas), Teach (forms and lessons), Feed (AI teacher, pictures, files) and Diary. On narrow screens the sidebar and inspector open as sheets. Keep new controls inside an inspector tab.
 
-Look and feel: a midnight blue ground, soft white text and one warm peach accent (every color and the font are Tailwind theme tokens in `web/src/app.css`, used as classes like `bg-night-800` or `text-peach`). The mind's strands glow in the color of the layer they lead into (names blue, hears lilac, says peach, actions mint) or of the color concept they touch. One friendly font, Plus Jakarta Sans, self hosted in `web/public/fonts`. Rounded, quiet surfaces. Style with Tailwind classes in the markup, not `<style>` blocks. Icons come only from Lucide. No emoji anywhere.
+Look and feel follows Apple's human interface guidelines. Colors are CSS variables in `web/src/app.css` with a light and a dark set, exposed as Tailwind tokens (`bg-surface`, `bg-fill`, `text-mute`, `text-accent`, `bg-blue`, `text-green` and so on), so never hard code a color. The font is the system font. Translucent materials use the `material` utility, large titles the `title` utility. Motion is critically damped springs, with feedback on press, and it respects reduced motion and reduced transparency. The Mind canvas reads its colors from `THEMES` in `Mind.svelte`. Style with Tailwind classes in the markup, not `<style>` blocks. Icons come only from Lucide. No emoji anywhere.
+
+**The face shows, it does not tell.** Never write an expression as text. `Face.svelte` drives facial action units (FACS) from `state.feelings`, `state.face` (maturity and the learned smile) and `baby.moment` (praised, corrected, spoke, explored, slept). Add a new reaction by setting a moment in `baby.svelte.js` and mapping it to muscles, not by drawing a new face.
+
+**Feeders turn outside data into experience.** `sourdough/feeders/` only produces moments (`name`, `reply`, `action`). `feed()` teaches them through the same `observe` and `model` calls a person would use. API keys come from the environment or are passed in, and are never written to disk.
 
 ## Common tasks
 
 * **Add a lesson:** add an entry to `foundation/lessons.json` with `teaches` set to `color`, `shape`, `reply` or `action`, add it to a level in `_levels`, then run `pytest`.
 * **Add a language:** add a block to `foundation/language.json` and translations to every lesson. `test_lesson_words_are_content_words` catches collisions.
 * **Add a sense:** write an encoder in `senses/`, give it a `Cortex` in `Brain.__init__`, add its kind to `Brain.senses` and to the Mind view columns.
+* **Add a feeder:** write a function in `feeders/` that yields moments like `{"kind": "reply", "prompt": ..., "answer": ...}`, pass them to `feed(brain, moments)`, and add a test in `tests/test_feeders.py`. An OpenAI compatible provider only needs an entry in `feeders/ai.py` `PROVIDERS`.
 * **Add an action:** pass it in `Brain(actions=...)` (the web host adds its own in `interface/body.py`), carry out `response.action`, and report the result with `observe(..., outcome_of=...)`.

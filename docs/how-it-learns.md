@@ -164,6 +164,30 @@ Praise and correction change only the links that produced the last words or acti
 
 Together this is a small version of **complementary learning systems** (McClelland, McNaughton and O'Reilly, 1995): fast learning from single episodes while awake, slower consolidation offline. A word learned once and never used fades after a few nights. A word used every day becomes permanent.
 
+## 10. Its face
+
+`web/src/lib/Face.svelte`, `Brain.face()`
+
+It shows what it feels with a face, never with words. Expressions are not drawn by hand. Each one is a mix of facial muscles, named after the action units of the Facial Action Coding System (Ekman and Friesen, 1978):
+
+| Muscle | Action unit | Driven by |
+|---|---|---|
+| lip corner puller | AU12 | joy, scaled by its learned smile |
+| cheek raiser | AU6 | a strong smile, which makes it look real |
+| lip corner depressor | AU15 | upset, being corrected |
+| brow lowerer | AU4 | upset and confusion |
+| brow raisers | AU1, AU2 | curiosity, surprise, asking |
+| upper lid raiser | AU5 | surprise, listening |
+| eyes closed | AU43 | tiredness, sleep, blinking |
+| jaw drop | AU26 | talking, surprise, yawning |
+
+Every muscle moves on a critically damped spring, so one expression flows into the next and can change half way, as a real face does.
+
+Two things about its face are learned, the way they are in infants.
+
+* **Control.** A newborn's expressions are small, imprecise and twitchy, with big eyes and faint brows. `face()["maturity"]` grows with age and vocabulary, and with it the range and steadiness of every expression (Oster, 2005).
+* **The social smile.** Its smile starts weak. Each time it is praised while happy, `smile` grows a little, so a baby that people answer warmly smiles more broadly. Infants' smiles likewise turn social and grow when caregivers respond to them (Messinger and Fogel, 2007).
+
 ## What it cannot do yet
 
 * It names, asks, answers and repeats short phrases, but it has no grammar.
@@ -177,13 +201,16 @@ Each of these is a good first contribution. See [growing-it.md](growing-it.md).
 
 * Carey, S., and Bartlett, E. (1978). Acquiring a single new word. *Papers and Reports on Child Language Development*, 15, 17 to 29.
 * Carpenter, G. A., and Grossberg, S. (1987). A massively parallel architecture for a self-organizing neural pattern recognition machine. *Computer Vision, Graphics, and Image Processing*, 37(1), 54 to 115.
+* Ekman, P., and Friesen, W. V. (1978). *Facial Action Coding System: A technique for the measurement of facial movement.* Consulting Psychologists Press.
 * Fernald, A. (1989). Intonation and communicative intent in mothers' speech to infants: Is the melody the message? *Child Development*, 60(6), 1497 to 1510.
 * Frémaux, N., and Gerstner, W. (2016). Neuromodulated spike-timing-dependent plasticity, and theory of three-factor learning rules. *Frontiers in Neural Circuits*, 9, 85.
 * Kidd, C., Piantadosi, S. T., and Aslin, R. N. (2012). The Goldilocks effect: Human infants allocate attention to visual sequences that are neither too simple nor too complex. *PLoS ONE*, 7(5), e36399.
 * Kuhl, P. K. (2004). Early language acquisition: Cracking the speech code. *Nature Reviews Neuroscience*, 5(11), 831 to 843.
 * Landau, B., Smith, L. B., and Jones, S. S. (1988). The importance of shape in early lexical learning. *Cognitive Development*, 3(3), 299 to 321.
 * Markman, E. M., and Wachtel, G. F. (1988). Children's use of mutual exclusivity to constrain the meanings of words. *Cognitive Psychology*, 20(2), 121 to 157.
+* Messinger, D., and Fogel, A. (2007). The interactive development of social smiling. *Advances in Child Development and Behavior*, 35, 327 to 366.
 * McClelland, J. L., McNaughton, B. L., and O'Reilly, R. C. (1995). Why there are complementary learning systems in the hippocampus and neocortex. *Psychological Review*, 102(3), 419 to 457.
+* Oster, H. (2005). The repertoire of infant facial expressions: An ontogenetic perspective. In J. Nadel and D. Muir (Eds.), *Emotional Development* (pp. 261 to 292). Oxford University Press.
 * Schultz, W., Dayan, P., and Montague, P. R. (1997). A neural substrate of prediction and reward. *Science*, 275(5306), 1593 to 1599.
 * Seidl, A., and Johnson, E. K. (2006). Infant word segmentation revisited: Edge alignment facilitates target extraction. *Developmental Science*, 9(6), 565 to 573.
 * Shi, R., and Werker, J. F. (2001). Six-month-old infants' preference for lexical words. *Psychological Science*, 12(1), 70 to 75.

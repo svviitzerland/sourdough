@@ -27,6 +27,9 @@ sourdough/
     language.json      word roles and language markers, English and Indonesian
     lessons.json       the built-in curriculum: colors, shapes, routines, actions
     lessons.py         draws lesson cards, runs lessons, grows a baby to a level
+  feeders/           outside data turned into teaching moments
+    files.py           prompt and answer pairs from JSON or CSV, pictures named after what they show
+    ai.py              an AI teacher over any OpenAI compatible API (OpenAI, OpenRouter, Ollama)
   storage.py         where each baby lives on disk
   interface/         how people reach it
     server.py          a standard library HTTP server
@@ -67,6 +70,7 @@ When you then say "yes", the foundation hears praise, and the link that produced
 | `reward(amount)` | explicit praise or correction, when plain "yes" and "no" are not enough |
 | `teach(brain, lesson, language)` | a prepared lesson with a quiz |
 | `grow(brain, level)` | every lesson of a level (toddler, preschooler, kid) in every language |
+| `feed(brain, moments)` | moments from a file, a folder of pictures or an AI teacher, taught twice and then quizzed |
 
 ## Time passes
 
@@ -131,6 +135,8 @@ The open baby (these answer 409 when no baby exists yet):
 | POST | `/api/lesson` | `name`, `language` | run a lesson and its quiz |
 | POST | `/api/reward` | `amount` from -1 to 1 | praise or correct |
 | POST | `/api/sleep` | | sleep now |
+| GET | `/api/feeders` | | the AI providers, their default models, and whether a key is set |
+| POST | `/api/feed` | `source` (`pairs`, `pictures`, `ai`), then `pairs`, or `pictures` (`image`, `label`), or `provider`, `model`, `topic`, `count`, `language`, `api_key`, `base_url` | learn from outside, returns a report |
 
 Every response that involves the baby acting returns a `response` with `words`, `mode`, `expression`, `action`, `feeling` and `initiative`, plus the current `state`.
 
