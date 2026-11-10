@@ -132,3 +132,12 @@ def test_a_spoken_request_outranks_naming_what_it_sees():
     baby.observe(text="jump", image=card)
     baby.demonstrate("jump")
     assert baby.observe(text="jump", image=card).action == "jump"
+
+
+def test_one_correction_is_enough_even_when_upset():
+    baby = Brain(seed=0)
+    baby.observe(text="hello")
+    baby.reward(-1.0)
+    baby.reward(-1.0)
+    baby.model("hi")
+    assert baby.observe(text="hello").words == ["hi"]

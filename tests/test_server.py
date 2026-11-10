@@ -2,23 +2,28 @@
 
 import json
 import threading
+import urllib.error
 import urllib.request
 
 import pytest
 
 from sourdough.interface import serve
-from sourdough.storage import Nest
 
 RED_PIXEL = (
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
 )
 
 
+def start(folder, name=None):
+    server = serve(folder, name=name, port=0)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, f"http://127.0.0.1:{server.server_address[1]}"
+
+
 @pytest.fixture
 def url(tmp_path):
-    server = serve(Nest("test", tmp_path), port=0)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server, address = start(tmp_path, "test")
+    yield address
     server.shutdown()
 
 
@@ -34,11 +39,53 @@ def test_page_is_served(url):
         assert b"Sourdough" in res.read()
 
 
+def test_without_babies_it_asks_for_one_first(tmp_path):
+    server, address = start(tmp_path)
+    try:
+        assert call(address, "/api/state")["name"] is None
+        with pytest.raises(urllib.error.HTTPError) as err:
+            call(address, "/api/observe", {"text": "hello"})
+        assert err.value.code == 409
+        made = call(address, "/api/babies", {"name": "kiki", "about": "a curious robot", "color": "mint"})
+        assert made["name"] == "kiki" and made["profile"]["about"] == "a curious robot"
+        assert made["state"]["vocabulary"] == []
+    finally:
+        server.shutdown()
+
+
+def test_the_last_baby_opens_again_next_time(tmp_path):
+    server, address = start(tmp_path)
+    call(address, "/api/babies", {"name": "pip"})
+    server.shutdown()
+    server, address = start(tmp_path)
+    try:
+        assert call(address, "/api/state")["name"] == "pip"
+    finally:
+        server.shutdown()
+
+
 def test_teach_and_recall_over_http(url):
     call(url, "/api/observe", {"text": "red", "image": RED_PIXEL})
     data = call(url, "/api/observe", {"image": RED_PIXEL})
     assert data["response"]["words"] == ["red"]
     assert data["state"]["vocabulary"][0]["word"] == "red"
+
+
+def test_teaching_forms(url):
+    call(url, "/api/teach", {"kind": "name", "image": RED_PIXEL, "answer": "merah"})
+    assert call(url, "/api/observe", {"image": RED_PIXEL})["response"]["words"] == ["merah"]
+    call(url, "/api/teach", {"kind": "reply", "prompt": "ping", "answer": "pong"})
+    assert call(url, "/api/observe", {"text": "ping"})["response"]["words"] == ["pong"]
+    call(url, "/api/teach", {"kind": "action", "prompt": "look around", "action": "explore"})
+    assert call(url, "/api/observe", {"text": "look around"})["response"]["action"] == "explore"
+
+
+def test_correcting_a_wrong_answer(url):
+    call(url, "/api/teach", {"kind": "reply", "prompt": "hello", "answer": "bye"})
+    assert call(url, "/api/observe", {"text": "hello"})["response"]["words"] == ["bye"]
+    call(url, "/api/correct", {"prompt": "hello", "answer": "hi"})
+    call(url, "/api/correct", {"prompt": "hello", "answer": "hi"})
+    assert call(url, "/api/observe", {"text": "hello"})["response"]["words"] == ["hi"]
 
 
 def test_reward_and_sleep(url):
@@ -66,8 +113,7 @@ def test_journal_and_graph(url):
 
 def test_show_and_tick(url):
     call(url, "/api/observe", {"text": "jump"})
-    assert call(url, "/api/show", {"action": "jump"})["response"]["action"] == "jump"
-    assert call(url, "/api/observe", {"text": "jump"})["response"]["action"] == "jump"
+    assert call(url, "/api/show", {"action": "explore"})["response"]["action"] == "explore"
     assert "response" in call(url, "/api/tick", {"seconds": 5})
 
 
@@ -78,19 +124,29 @@ def test_exploring_brings_back_something_from_its_world(url):
     assert data["outcome"]["response"]["mode"] != "silent"
 
 
-def test_babies_can_be_created_at_a_level_and_switched(url):
+def test_characters_can_be_created_switched_edited_and_deleted(url):
     listing = call(url, "/api/babies")
     assert [lvl["name"] for lvl in listing["levels"]] == ["newborn", "toddler", "preschooler", "kid"]
-    data = call(url, "/api/baby", {"name": "kidd", "level": "kid"})
-    assert data["name"] == "kidd" and len(data["state"]["vocabulary"]) > 60
-    assert call(url, "/api/observe", {"text": "what does a cat say"})["response"]["words"] == ["meow"]
-    back = call(url, "/api/baby", {"name": "test"})
-    assert back["name"] == "test"
-    assert {b["name"] for b in call(url, "/api/babies")["babies"]} == {"test", "kidd"}
+    data = call(url, "/api/babies", {"name": "Kiki", "level": "kid", "about": "a robot"})
+    assert data["name"] == "Kiki" and len(data["state"]["vocabulary"]) > 60
+    assert call(url, "/api/observe", {"text": "what is your name"})["response"]["words"] == ["kiki"]
+    assert call(url, "/api/baby/edit", {"about": "a kind robot", "color": "sky"})["profile"]["color"] == "sky"
+    assert call(url, "/api/baby", {"name": "test"})["name"] == "test"
+    names = {b["name"] for b in call(url, "/api/babies")["babies"]}
+    assert names == {"test", "Kiki"}
+    left = call(url, "/api/baby/delete", {"name": "Kiki"})
+    assert [b["name"] for b in left["babies"]] == ["test"]
+
+
+def test_names_must_be_new_and_simple(url):
+    for name in ("test", "bad name!"):
+        with pytest.raises(urllib.error.HTTPError) as err:
+            call(url, "/api/babies", {"name": name})
+        assert err.value.code == 400
 
 
 def test_suggestions_fit_what_it_knows(url):
     assert call(url, "/api/suggestions")["prompts"] == []
-    call(url, "/api/baby", {"name": "kid", "level": "kid"})
+    call(url, "/api/babies", {"name": "smart", "level": "kid"})
     prompts = call(url, "/api/suggestions")["prompts"]
     assert 0 < len(prompts) <= 4
