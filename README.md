@@ -21,43 +21,55 @@ pip install -e .
 sourdough
 ```
 
-A browser tab opens and asks which baby you want. The only dependencies are numpy and Pillow. Python 3.11 or newer works, and the repo pins 3.13 for [pyenv](https://github.com/pyenv/pyenv).
+A browser tab opens and asks you to name your first baby. The only dependencies are numpy and Pillow. Python 3.11 or newer works, and the repo pins 3.13 for [pyenv](https://github.com/pyenv/pyenv).
 
-## Pick a baby
+## Characters
 
-Every Sourdough is the same baby. The higher levels have simply lived through more lessons already, exactly the way you would teach them by hand.
+Every Sourdough is a character of its own: a name, who it is in a sentence, and a color. You can raise as many as you like. Each one lives in its own folder and never shares what it learned with the others.
 
-| Level | Knows | Try saying |
+**Every baby is born a newborn, knowing nothing.** When you create one you may give it a starter pack, which runs the built-in lessons once, right then. After that it is simply that baby, and it only grows from what you teach it.
+
+| Starter pack | It already knows | Try saying |
 |---|---|---|
-| **Newborn** | nothing at all | anything, then show it a picture and name it |
-| **Toddler** | 10 colors, 8 shapes, everyday routines | "hello", "thank you", or show it a red star |
-| **Preschooler** | also its own name and what animals say | "what is your name", "what does a cow say" |
-| **Kid** | also colors of things, opposites, counting, kinds of things | "what color is the sky", "opposite of big", "after three", "an apple is a" |
+| none (newborn) | nothing at all | show it a picture and say what it is |
+| Toddler | 10 colors, 8 shapes, everyday routines | "hello", "thank you", or show it a red star |
+| Preschooler | also its own name and what animals say | "what is your name", "what does a cow say" |
+| Kid | also colors of things, opposites, counting, kinds of things | "what color is the sky", "opposite of big", "after three" |
 
-All of it works in English and Indonesian. It answers in the language you speak to it in: "what does a cat say" gets "meow", "kucing bilang apa" gets "meong".
+All of it works in English and Indonesian. It answers in the language you speak to it in.
 
 ```bash
-sourdough --level kid            # start the default baby as a kid
-sourdough --name pip             # a second baby, born knowing nothing
+sourdough                                   # open the web app with the baby used last
+sourdough new kiki                          # create a newborn from the terminal
+sourdough new bima --level kid --about "a clever kid who loves animals"
+sourdough list                              # every baby and how far along it is
+sourdough --name kiki                       # open the web app with kiki
 ```
 
 ## Using it
 
-The page is the baby's mind: every concept it has formed and every link between them, from what it senses on the left to what it says and does on the right. It lights up as it thinks.
+The left side is the baby's mind: every concept it has formed and every link between them, lighting up as it thinks. The right side has three tabs.
 
-* **Talk** in the box at the bottom, or press the microphone.
-* **Show** it something with the camera or a picture, and say what it is.
-* **Right** or **Wrong** after it answers. Plain "yes" and "no" work too.
-* **Teach** opens lessons and lets you show it an action.
-* **Diary** shows its life, moment by moment.
-* Drag the mind to move it, scroll to zoom, click a concept to see its links.
+**Talk** is a conversation.
 
-A few habits help it learn fast, because they are how babies learn fast:
+* Say something, or show it a picture or the camera and say what it is.
+* After it answers, press **Right**, or **Wrong** and type the right answer. That one step corrects it and teaches it.
+* When it babbles at something you said, press **Teach it what to say**.
+* When it asks **?** about a picture, type what it is right under its question.
 
-* **Name things while it looks at them.** A word gets its meaning from what is in view at that moment.
-* **Put the new word last.** "Look, this is a *cup*."
-* **Keep the word, change the rest.** Same word, different angles and sentences.
-* **Answer its questions.** When it asks "?", it is looking at something it has no word for.
+**Teach** has three simple forms, plus ready made lessons:
+
+* **Name a picture**: choose a picture, type what it is.
+* **An answer**: when I say ___, it answers ___.
+* **An action**: when I say ___, it does ___.
+
+**Diary** shows its life, moment by moment, and lets you put it to sleep.
+
+Switch, create, edit or delete babies from the name at the top left. Deleted babies go to `~/.sourdough/trash`, so they can still be restored.
+
+## It is curious
+
+You do not have to speak first. When nothing happens for about half a minute it gets bored and does something by itself: it explores its own folder and asks about pictures it does not know, checks a word it is unsure of, or tries out its body. Answer it, and it learns.
 
 ## It acts, and learns from what happens
 
@@ -74,6 +86,7 @@ A robot, a game or a smart home can give it a different body. See [docs/growing-
 
 ```
 ~/.sourdough/brains/<name>/
+  profile.json      who it is: name, description, color, starter pack
   brain.json        what it knows: concepts, links, feelings
   journal.jsonl     what happened: one line per moment
   snapshots/        a copy of the brain after every sleep
@@ -105,9 +118,12 @@ The web page is one way in. The same brain works from Python, and over plain HTT
 
 ```python
 from sourdough import Nest
+from sourdough.storage import babies
 
-nest = Nest("pip")
-baby = nest.create("toddler")          # or nest.load() for one that exists
+print([n.name for n in babies()])      # every baby you have
+
+nest = Nest("kiki")                    # pick a baby by name
+baby = nest.load()                     # or Nest("pip").create("toddler", about="...") for a new one
 print(baby.observe(text="hello"))      # hi
 baby.observe(text="look, a cat", image="cat.jpg")
 print(baby.observe(image="another_cat.jpg"))   # cat

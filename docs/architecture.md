@@ -77,7 +77,11 @@ Between messages the page calls `tick` every few seconds. Boredom grows while no
 Each baby has a folder, under `~/.sourdough/brains` by default. Set `SOURDOUGH_HOME` or pass `--home` to move it.
 
 ```
-~/.sourdough/brains/<name>/
+~/.sourdough/
+  current           the baby opened last
+  trash/            deleted babies
+  brains/<name>/
+  profile.json      who it is: name, description, color, starter pack, summary
   brain.json        what it knows
   journal.jsonl     what happened
   snapshots/
@@ -100,16 +104,29 @@ How data grows: every new thing seen or heard adds one concept, and every naming
 
 The server binds to `127.0.0.1:8008`. Any program that speaks HTTP and JSON can raise the baby.
 
+Babies (characters):
+
 | Method | Path | Body | Does |
 |---|---|---|---|
-| GET | `/api/state` | | name, age, stage, feelings, vocabulary, actions |
-| GET | `/api/babies` | | every baby in this home, and the levels a new one can start at |
+| GET | `/api/babies` | | every baby, the open one, and the starter packs |
+| POST | `/api/babies` | `name`, `about`, `color`, `level` | create a baby and open it |
+| POST | `/api/baby` | `name` | open another baby |
+| POST | `/api/baby/edit` | `about`, `color` | change the open baby's profile |
+| POST | `/api/baby/delete` | `name` | move a baby to the trash |
+
+The open baby (these answer 409 when no baby exists yet):
+
+| Method | Path | Body | Does |
+|---|---|---|---|
+| GET | `/api/state` | | name, profile, age, stage, feelings, vocabulary, actions |
 | GET | `/api/graph` | | its concept network: nodes, weighted edges, active concepts |
-| GET | `/api/lessons` | | the built-in curriculum |
 | GET | `/api/journal` | | its last 100 moments |
-| POST | `/api/observe` | `text`, `image` (data URL), `audio` (`samples` as base64 float32, `rate`), `passive`, `outcome_of` | one moment of experience |
+| GET | `/api/suggestions` | | a few things worth saying to it |
+| GET | `/api/lessons` | | the built-in lessons |
+| POST | `/api/observe` | `text`, `image` (data URL), `audio`, `passive`, `outcome_of` | one moment of experience |
+| POST | `/api/teach` | `kind` (`name`, `reply`, `action`), `prompt`, `answer`, `image`, `action` | teach one thing in one step |
+| POST | `/api/correct` | `answer`, plus `prompt` or `image` | say no, then teach the right answer |
 | POST | `/api/tick` | `seconds` | time passes, it may act on its own |
-| POST | `/api/baby` | `name`, `level` | switch to a baby, creating it at a level if it is new |
 | POST | `/api/show` | `action` | demonstrate an action |
 | POST | `/api/lesson` | `name`, `language` | run a lesson and its quiz |
 | POST | `/api/reward` | `amount` from -1 to 1 | praise or correct |

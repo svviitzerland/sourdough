@@ -15,11 +15,12 @@ pip install -e '.[dev]'
 
 pytest                              # behavioral tests, about 4 seconds
 sourdough                           # web app on http://localhost:8008
-sourdough --name demo --level kid  # a new baby grown through every lesson
+sourdough new demo --level kid     # a new baby with the kid starter pack
+sourdough list                     # every baby
 python examples/first_words.py      # terminal demo
 ```
 
-Brains live in `~/.sourdough/brains/<name>/`. Set `SOURDOUGH_HOME` to use a scratch folder while developing, so you never touch a real baby.
+Each baby is a character with its own folder in `~/.sourdough/brains/<name>/` (`profile.json`, `brain.json`, `journal.jsonl`, `snapshots/`, `world/`). Code picks one by name with `Nest("kiki")`, the web app opens the one used last. Every baby is born a newborn. Starter packs (`foundation/lessons.json` `_levels`) only run once, at creation. Set `SOURDOUGH_HOME` to use a scratch folder while developing, so you never touch a real baby.
 
 ## Layout
 
