@@ -150,3 +150,12 @@ def test_suggestions_fit_what_it_knows(url):
     call(url, "/api/babies", {"name": "smart", "level": "kid"})
     prompts = call(url, "/api/suggestions")["prompts"]
     assert 0 < len(prompts) <= 4
+
+
+def test_feeding_over_http(url):
+    providers = {p["name"]: p for p in call(url, "/api/feeders")["providers"]}
+    assert set(providers) >= {"openai", "openrouter", "ollama"} and providers["ollama"]["ready"]
+    data = call(url, "/api/feed", {"source": "pairs", "pairs": [{"prompt": "what do bees make", "answer": "honey"}]})
+    assert data["report"]["correct"] == 1
+    data = call(url, "/api/feed", {"source": "pictures", "pictures": [{"image": RED_PIXEL, "file": "red.png"}]})
+    assert data["report"]["taught"] == 1

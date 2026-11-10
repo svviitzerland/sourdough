@@ -29,6 +29,8 @@ The open baby
     POST /api/tick            {"seconds"}  time passes, it may act on its own
     POST /api/show            {"action"}   demonstrate an action
     POST /api/lesson          {"name", "language"}
+    GET  /api/feeders         the AI providers it can learn from, and which have a key
+    POST /api/feed            {"source": "pairs" | "pictures" | "ai", ...}  learn from outside
     POST /api/reward          {"amount"}   from -1 to 1
     POST /api/sleep
 
@@ -40,6 +42,7 @@ from __future__ import annotations
 import base64
 import json
 import mimetypes
+import os
 import random
 import threading
 from http import HTTPStatus
@@ -49,6 +52,7 @@ from pathlib import Path
 import numpy as np
 
 from ..brain import Response
+from ..feeders import PROVIDERS, Teacher, feed, label_of
 from ..foundation.lessons import LANGUAGES, catalog, curriculum, levels, teach
 from ..storage import Nest, babies, current, remember_current
 from .body import ACTIONS, Body
@@ -75,6 +79,7 @@ class Nursery:
         self.lock = threading.Lock()
         self.nest: Nest | None = None
         self.brain = None
+        self.keys: dict[str, str] = {}   # API keys typed in the web app, kept in memory only
         self._unsaved = 0
         name = name or current(folder)
         if name:
@@ -246,6 +251,44 @@ class Nursery:
             self.nest.save(self.brain)
             return {"lesson": result, "state": self.brain.state()}
 
+    def feeders(self) -> dict:
+        return {"providers": [
+            {"name": name, "model": info["model"], "url": info["url"],
+             "ready": not info["key"] or bool(os.environ.get(info["key"]) or self.keys.get(name)),
+             "key": info["key"]}
+            for name, info in PROVIDERS.items()
+        ]}
+
+    def feed(self, body: dict) -> dict:
+        """Learn from outside: pairs, named pictures, or an AI teacher."""
+        source = body.get("source")
+        if source == "pairs":
+            moments = [{"kind": "reply", "prompt": str(p.get("prompt", "")), "answer": str(p.get("answer", ""))}
+                       for p in body.get("pairs", [])]
+        elif source == "pictures":
+            moments = [{"kind": "name", "image": p["image"], "answer": p.get("label") or label_of(p.get("file", ""))}
+                       for p in body.get("pictures", []) if p.get("image")]
+        elif source == "ai":
+            provider = str(body.get("provider") or "openai")
+            if body.get("api_key"):
+                self.keys[provider] = str(body["api_key"]).strip()
+            teacher = Teacher(provider, model=body.get("model") or None, api_key=self.keys.get(provider),
+                              base_url=body.get("base_url") or None)
+            # Ask the teacher before taking the lock: it can take a while.
+            moments = list(teacher.lesson(str(body.get("topic") or ""), int(body.get("count") or 12),
+                                          str(body.get("language") or "en")))
+        else:
+            raise ValueError("unknown source, use pairs, pictures or ai")
+        if not moments:
+            raise ValueError("there was nothing to learn from")
+        with self.lock:
+            self._need()
+            report = feed(self.brain, moments)
+            self.nest.journal.write("fed", age=self.brain.age, source=source, taught=report["taught"],
+                                    correct=report["correct"], topic=body.get("topic") or "")
+            self.nest.save(self.brain)
+            return {"report": report, "state": self.brain.state()}
+
     def reward(self, amount: float) -> dict:
         with self.lock:
             self._need()
@@ -343,6 +386,7 @@ ROUTES_GET = {
     "/api/lessons": lambda n, b: {"lessons": catalog()},
     "/api/journal": lambda n, b: n.journal(),
     "/api/suggestions": lambda n, b: n.suggestions(),
+    "/api/feeders": lambda n, b: n.feeders(),
 }
 ROUTES_POST = {
     "/api/babies": lambda n, b: n.create(str(b.get("name") or ""), str(b.get("about") or ""),
@@ -356,6 +400,7 @@ ROUTES_POST = {
     "/api/tick": lambda n, b: n.tick(float(b.get("seconds", 0))),
     "/api/show": lambda n, b: n.show(str(b["action"])),
     "/api/lesson": lambda n, b: n.lesson(b["name"], b.get("language", "en")),
+    "/api/feed": lambda n, b: n.feed(b),
     "/api/reward": lambda n, b: n.reward(float(b.get("amount", 0))),
     "/api/sleep": lambda n, b: n.sleep(),
 }
